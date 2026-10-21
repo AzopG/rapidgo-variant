@@ -32,8 +32,10 @@ antes de que el deterioro se vuelva una tendencia.
 | KPIs mínimos | calificación media · motivos frecuentes · tendencia de satisfacción |
 | Alertas mínimas | caída de calificación · concentración de reclamos |
 
-Los umbrales iniciales se definen en la Semana 1 y se ajustan con evidencia de
-ejecución real (ver `docs/decisions/ADR-001` y las notas de umbrales).
+Los umbrales iniciales están en [`docs/kpis-alerts.md`](docs/kpis-alerts.md) y se ajustan
+con evidencia de ejecución real. El contrato del evento vive en
+[`docs/event-contract.md`](docs/event-contract.md) y la decisión de key y particiones en
+[`docs/decisions/ADR-001-kafka-key-partitions.md`](docs/decisions/ADR-001-kafka-key-partitions.md).
 
 ## Arquitectura
 

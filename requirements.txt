@@ -1,0 +1,7 @@
+# Dependencias del proyecto RapidGo 360 - Variante 7
+# Semana 2: se confirma la version de PySpark sobre Python 3.13 en la primera corrida.
+
+pyspark==4.0.1
+kafka-python-ng==2.2.3
+pytest==8.3.3
+python-dotenv==1.0.1
