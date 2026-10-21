@@ -11,7 +11,7 @@ Ingeniería de Sistemas y Computación · Facatativá · 2026
 | --- | --- |
 | Andres Maldonado | [FelipeMaldonado10](https://github.com/FelipeMaldonado10) |
 | Ivan Palacio | [AzopG](https://github.com/AzopG) |
-| Luis Jaraba | [angeljb](https://github.com/angeljb) |
+| Luis Jaraba | [vannysys](https://github.com/vannysys) |
 
 ## Problema de negocio
 
