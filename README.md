@@ -45,7 +45,7 @@ con evidencia de ejecución real. El contrato del evento vive en
 Generador de eventos (producer)
         |
         v
-      Kafka  (topic: rapidgo.ratings, key: pedido_id)
+      Kafka  (topic: rapidgo.ratings, key: order_id)
         |
         v
 Spark Structured Streaming
