@@ -1,0 +1,29 @@
+# Python
+__pycache__/
+*.py[cod]
+.venv/
+venv/
+.pytest_cache/
+.coverage
+htmlcov/
+.env
+
+# Data lake outputs (only structure and README are versioned)
+datalake/raw/*
+datalake/processed/*
+datalake/curated/*
+!datalake/**/.gitkeep
+*.parquet
+spark-warehouse/
+checkpoints/
+*.log
+
+# IDE / OS
+.idea/
+.vscode/
+.DS_Store
+Thumbs.db
+
+# Course material (not part of the deliverable)
+Guia_Proyecto_Final_BigData_RapidGo.pdf
+Presentacion_Proyecto_Final_BigData_RapidGo-801.pdf
