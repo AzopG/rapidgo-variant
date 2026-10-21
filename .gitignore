@@ -15,7 +15,7 @@ datalake/curated/*
 !datalake/**/.gitkeep
 *.parquet
 spark-warehouse/
-checkpoints/
+/checkpoints/
 *.log
 
 # IDE / OS
