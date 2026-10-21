@@ -39,11 +39,13 @@ con evidencia de ejecución real. El contrato del evento vive en
 
 ## Arquitectura
 
+![Arquitectura de la variante 7](docs/arquitectura.png)
+
 ```
 Generador de eventos (producer)
         |
         v
-      Kafka  (topic: rapidgo.ratings, key: pedido_id)
+      Kafka  (topic: rapidgo.ratings, key: order_id)
         |
         v
 Spark Structured Streaming
@@ -59,7 +61,8 @@ Apache Airflow: calidad -> agregacion -> reporte
 Indicadores y alertas
 ```
 
-Diagrama definitivo en `docs/arquitectura.png` (Semana 1).
+Diagrama editable: [`docs/arquitectura.png`](docs/arquitectura.png). El bloque de texto
+de arriba resume el mismo flujo para quien lee sin imágenes.
 
 ## Stack
 
