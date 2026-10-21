@@ -109,6 +109,14 @@ esté funcional._
 
 _Pendiente: `pytest -v` queda activo junto con el workflow de CI en la Semana 2._
 
+## Organización del trabajo
+
+- **Tablero Kanban:** https://github.com/users/AzopG/projects/1
+- Columnas: `BACKLOG → READY → IN PROGRESS → REVIEW → DONE`
+- Campos: `Semana`, `Responsable`, `Prioridad`, `Componente`
+- **Backlog:** 23 Issues abiertos, distribuidos en las cuatro semanas.
+- Flujo por cambio: `Issue → Branch → PR → GitHub Actions → Review → Merge`.
+
 ## Roadmap de releases
 
 | Release | Semana | Alcance | Estado |
@@ -126,4 +134,6 @@ se completa en la Semana 4, a partir del historial real del repositorio.
 ## Enlaces
 
 - Video final: _pendiente_
-- Tablero Kanban: _pendiente_
+- Tablero Kanban: https://github.com/users/AzopG/projects/1
+- Contrato del evento: [`docs/event-contract.md`](docs/event-contract.md)
+- KPIs y alertas: [`docs/kpis-alerts.md`](docs/kpis-alerts.md)
