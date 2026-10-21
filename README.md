@@ -9,9 +9,9 @@ Ingeniería de Sistemas y Computación · Facatativá · 2026
 
 | Integrante | Usuario GitHub |
 | --- | --- |
-| Andres Maldonado | _pendiente_ |
-| Ivan Palacio | _pendiente_ |
-| Luis Jaraba | _pendiente_ |
+| Andres Maldonado | [FelipeMaldonado10](https://github.com/FelipeMaldonado10) |
+| Ivan Palacio | [AzopG](https://github.com/AzopG) |
+| Luis Jaraba | [angeljb](https://github.com/angeljb) |
 
 ## Problema de negocio
 
