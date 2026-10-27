@@ -84,6 +84,7 @@ rapidgo-variant/
 ├── airflow/dags/          # DAGs de orquestación
 ├── producer/              # generador de eventos
 ├── spark/                 # jobs de Structured Streaming
+├── scripts/               # utilidades de infraestructura (topic de Kafka)
 ├── tests/                 # pruebas de contrato y reglas de negocio
 ├── samples/               # eventos de ejemplo
 ├── datalake/              # estructura del data lake (raw/processed/curated)
@@ -101,16 +102,60 @@ rapidgo-variant/
 
 - Docker Desktop con Docker Compose v2
 - Python 3.13
-- Git
+- Java 17 o superior disponible en el `PATH` (lo requiere PySpark)
 
 ## Ejecución local
 
-_Pendiente: se completa en la Semana 2, cuando el pipeline Kafka → Spark → Data Lake
-esté funcional._
+### 1. Levantar Kafka
+
+```bash
+docker compose up -d kafka
+```
+
+El contenedor queda `healthy` cuando el broker responde a `kafka-topics.sh`.
+
+### 2. Crear el topic `rapidgo.ratings`
+
+```bash
+python -m venv .venv
+.venv\Scripts\activate          # Linux/macOS: source .venv/bin/activate
+pip install -r requirements.txt
+
+python -m scripts.create_topic
+```
+
+Salida esperada la primera vez:
+
+```text
+estado observado: topic=rapidgo.ratings exists=False ...
+accion: create
+rapidgo.ratings: creado
+estado final: topic=rapidgo.ratings exists=True partitions=3 replication_factor=1 retention_ms=604800000 ...
+```
+
+El script es **idempotente**: en la segunda corrida informa `accion: noop` y no toca
+el broker. Si el topic existiera con otra cantidad de particiones o factor de
+replicación, falla con un mensaje explícito, porque esas propiedades no se pueden
+reducir sin perder datos.
+
+Configuración que impone (ADR-001): 3 particiones, replication-factor 1, retención de
+7 días (`604800000` ms) y `cleanup.policy=delete`. La creación automática de topics está
+deshabilitada en el broker, así que el topic existe únicamente porque este script lo crea.
+
+Verificación manual:
+
+```bash
+docker exec rapidgo-kafka /opt/kafka/bin/kafka-topics.sh \
+  --bootstrap-server localhost:9092 --describe --topic rapidgo.ratings
+```
 
 ## Pruebas
 
-_Pendiente: `pytest -v` queda activo junto con el workflow de CI en la Semana 2._
+```bash
+pytest -v
+```
+
+Las pruebas no necesitan Kafka ni Spark levantados: cubren la lógica pura del proyecto.
 
 ## Organización del trabajo
 
