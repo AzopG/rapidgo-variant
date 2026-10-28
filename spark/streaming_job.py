@@ -1,4 +1,4 @@
-"""Job de ingesta: Kafka `rapidgo.ratings` -> data lake en Parquet (Issues #8 y #9).
+﻿"""Job de ingesta: Kafka `rapidgo.ratings` -> data lake en Parquet (Issues #8 y #9).
 
 Corre en el contenedor de Spark (ADR-002), no en el host:
 
@@ -31,17 +31,19 @@ REPO_ROOT = Path(__file__).resolve().parents[1]
 if str(REPO_ROOT) not in sys.path:
     sys.path.insert(0, str(REPO_ROOT))
 
+from spark.sources import (  # noqa: E402
+    DEFAULT_CHECKPOINTS,
+    DEFAULT_LAKE,
+    KAFKA_BOOTSTRAP,
+    read_kafka,
+    spark_session,
+)
 from spark.transformations import (  # noqa: E402
-    EVENT_SCHEMA_SQL,
     TOPIC,
     WATERMARK,
     rejection_reason_column,
     transform_plan,
 )
-
-DEFAULT_LAKE = REPO_ROOT / "datalake"
-DEFAULT_CHECKPOINTS = REPO_ROOT / "checkpoints"
-KAFKA_BOOTSTRAP = "kafka:29092"
 
 REJECTED_COLUMNS = (
     "event_id",
@@ -60,52 +62,16 @@ REJECTED_COLUMNS = (
 )
 
 
-def _spark():
-    from pyspark.sql import SparkSession  # noqa: PLC0415
-
-    spark = (
-        SparkSession.builder.appName("rapidgo-streaming-ingest")
-        .config("spark.sql.session.timeZone", "UTC")
-        .config("spark.sql.shuffle.partitions", "2")
-        .getOrCreate()
-    )
-    spark.sparkContext.setLogLevel("WARN")
-    return spark
-
-
-def read_kafka(spark, args):
-    """Stream de Kafka con el esquema del contrato aplicado al `value`."""
-    from pyspark.sql import functions as F  # noqa: PLC0415
-
-    raw = (
-        spark.readStream.format("kafka")
-        .option("kafka.bootstrap.servers", args.bootstrap_servers)
-        .option("subscribe", args.topic)
-        .option("startingOffsets", args.starting_offsets)
-        .option("failOnDataLoss", "false")
-        .load()
-    )
-    return (
-        raw.select(
-            F.from_json(F.col("value").cast("string"), EVENT_SCHEMA_SQL).alias("payload"),
-            F.col("timestamp").alias("kafka_ts"),
-            F.col("partition").alias("kafka_partition"),
-            F.col("offset").alias("kafka_offset"),
-            F.col("value").cast("string").alias("raw_value"),
-        )
-        .select("payload.*", "kafka_ts", "kafka_partition", "kafka_offset", "raw_value")
-        # try_to_timestamp: con ANSI activado (default en Spark 4) un `occurred_at`
-        # malformado lanzaria CAST_INVALID_INPUT en vez de quedar null. La regla 3 del
-        # contrato pide descartar el evento, no abortar el batch.
-        .withColumn("event_ts", F.try_to_timestamp(F.col("occurred_at")))
-    )
-
-
 def prepare(spark, args):
     """Separa validos de rechazados y aplica las transformaciones del contrato."""
     from pyspark.sql import functions as F  # noqa: PLC0415
 
-    parsed = read_kafka(spark, args)
+    parsed = read_kafka(
+        spark,
+        bootstrap_servers=args.bootstrap_servers,
+        topic=args.topic,
+        starting_offsets=args.starting_offsets,
+    )
     classified = parsed.withColumn("rejection_reason", rejection_reason_column())
 
     valid = classified.where(F.col("rejection_reason").isNull()).drop(
@@ -232,7 +198,7 @@ def main(argv: list[str] | None = None) -> int:
 
     lake = Path(args.lake_dir)
     checkpoints = Path(args.checkpoint_dir)
-    spark = _spark()
+    spark = spark_session("rapidgo-streaming-ingest")
     print(f"JOB lake={lake} checkpoints={checkpoints} topic={args.topic}", flush=True)
 
     valid, rejected = prepare(spark, args)

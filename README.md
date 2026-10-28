@@ -196,6 +196,39 @@ El wrapper se encarga de todo lo que hay que recordar a mano: monta el repo en
 python -m scripts.run_spark_job spark/streaming_job.py --dry-run   # solo muestra el comando
 ```
 
+Al terminar, el job imprime el conteo por capa y, para la evidencia, el árbol de
+particiones, la distribución de clases y el motivo de cada rechazo:
+
+```text
+LAKE raw=100 processed=100 rechazados=6
+ARBOL raw: dt=2026-10-28/hour=16
+CLASES bueno=76, critico=16, medio=8
+MOTIVOS future_occurred_at=1, invalid_channel=1, invalid_occurred_at=1, missing:customer_id=1, missing:complaint_reason=1, rating_out_of_range=1
+```
+
+### 5. Alertas A1 y A2
+
+```bash
+python -m scripts.run_spark_job spark/alerts_job.py -- --duration 90
+```
+
+Evalúa las dos reglas de [`docs/kpis-alerts.md`](docs/kpis-alerts.md) sobre ventanas de
+`occurred_at`, global y por zona, y escribe en `datalake/curated/alerts` el valor
+observado, el umbral que la disparó y la ventana, para poder auditar por qué sonó.
+
+- **A1:** `avg(rating) < 3.60` con `n >= 20` en 10 minutos → `warning`; `< 3.20` → `critical`.
+- **A2:** un motivo con `>= 30%` de los reclamos y `n_reclamos >= 10` en 15 minutos →
+  `warning`; `>= 50%` → `critical`.
+
+El cooldown es de 15 minutos por `(alerta, zona, motivo)`. Al arrancar se siembra desde
+`curated/alerts`, así que un reinicio no repite una alerta que ya sonó. Para probarlo con
+eventos degradados:
+
+```bash
+python -m producer.rating_producer --rate 10 --duration 30 --degradation 0.7 --dominant-reason late_delivery
+python -m scripts.run_spark_job spark/alerts_job.py -- --once
+```
+
 ## Pruebas
 
 ```bash
