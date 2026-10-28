@@ -102,7 +102,7 @@ rapidgo-variant/
 
 - Docker Desktop con Docker Compose v2
 - Python 3.13
-- Java 17 o superior disponible en el `PATH` (lo requiere PySpark)
+- Docker con acceso a internet la primera vez (descarga la imagen de Spark y el conector)
 
 ## Ejecución local
 
@@ -175,6 +175,25 @@ Para provocar las alertas A1 y A2 en una corrida integrada:
 
 ```bash
 python -m producer.rating_producer --rate 10 --duration 60 --seed 7 --degradation 0.7
+```
+
+### 4. Ejecutar un job de Spark
+
+```bash
+python -m scripts.run_spark_job spark/streaming_job.py
+```
+
+Spark corre en el contenedor `apache/spark:4.0.1`, no en el host: en Windows nativo Spark
+no puede escribir Parquet sin `winutils.exe` y el conector de Kafka falla por la misma
+causa. La decisión completa, con la evidencia, está en
+[`docs/decisions/ADR-002-spark-execution-environment.md`](docs/decisions/ADR-002-spark-execution-environment.md).
+
+El wrapper se encarga de todo lo que hay que recordar a mano: monta el repo en
+`/opt/rapidgo`, se conecta a la red de Kafka, usa `kafka:29092` y fija el connector
+`spark-sql-kafka-0-10_2.13:4.0.1` para que coincida con la versión de Spark.
+
+```bash
+python -m scripts.run_spark_job spark/streaming_job.py --dry-run   # solo muestra el comando
 ```
 
 ## Pruebas
