@@ -149,6 +149,34 @@ docker exec rapidgo-kafka /opt/kafka/bin/kafka-topics.sh \
   --bootstrap-server localhost:9092 --describe --topic rapidgo.ratings
 ```
 
+### 3. Publicar eventos de calificación
+
+```bash
+python -m producer.rating_producer --rate 10 --duration 30 --seed 7
+```
+
+| Flag | Default | Para qué |
+| --- | --- | --- |
+| `--rate` | `5.0` | eventos por segundo |
+| `--duration` | `30.0` | segundos de corrida (`--rate` × `--duration` = eventos) |
+| `--seed` | aleatoria | semilla: la misma semilla reproduce la misma secuencia |
+| `--degradation` | `0.0` | proporción `0..1` de eventos con rating 1–2 y motivo dominante |
+| `--dominant-reason` | `late_delivery` | motivo que se concentra en modo degradación |
+| `--dry-run` | — | genera y muestra eventos sin publicarlos |
+
+Salida al terminar, con los offsets reales por partición:
+
+```text
+publicados=50 particiones_usadas=3 duracion_s=4.9 tasa_efectiva=10.2/s
+[p0: count=18 last_offset=17, p1: count=13 last_offset=12, p2: count=19 last_offset=18]
+```
+
+Para provocar las alertas A1 y A2 en una corrida integrada:
+
+```bash
+python -m producer.rating_producer --rate 10 --duration 60 --seed 7 --degradation 0.7
+```
+
 ## Pruebas
 
 ```bash
