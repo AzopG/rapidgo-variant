@@ -32,20 +32,28 @@ Luis    revisa a  Andrés
 
 ---
 
-## Estado al 28 de octubre
+## Estado final al 29 de octubre
 
-Los seis PR de código y documentación de la semana ya están en `main`.
+Doce PR de la semana en `main`. Los seis primeros cerraron el alcance funcional el 28; el
+resto entró el 29 con el CI, la verificación end-to-end y los dos arreglos que volvieron
+reproducible el pipeline.
 
-| Hora (UTC) | PR | Qué entró | Merge |
-| --- | --- | --- | --- |
-| 16:12 | [#28](https://github.com/AzopG/rapidgo-variant/pull/28) | Topic idempotente + listeners KRaft | `f3ddb25` |
-| 16:38 | [#27](https://github.com/AzopG/rapidgo-variant/pull/27) | Marca `v0.1.0-foundation` como liberado | `3370a2e` |
-| 16:41 | [#29](https://github.com/AzopG/rapidgo-variant/pull/29) | Producer con key `order_id` y modo degradación | `2ed94d7` |
-| 16:41 | [#30](https://github.com/AzopG/rapidgo-variant/pull/30) | ADR-002: Spark en contenedor | `151b700` |
-| 16:56 | [#31](https://github.com/AzopG/rapidgo-variant/pull/31) | Ingesta a Parquet con ruta de rechazo | `7949e35` |
-| 17:02 | [#32](https://github.com/AzopG/rapidgo-variant/pull/32) | Alertas A1 y A2 con cooldown | `dff107a` |
+| Fecha | PR | Qué entró | Autor | Merge |
+| --- | --- | --- | --- | --- |
+| 28 | [#28](https://github.com/AzopG/rapidgo-variant/pull/28) | Topic idempotente + listeners KRaft | Ivan | `f3ddb25` |
+| 28 | [#27](https://github.com/AzopG/rapidgo-variant/pull/27) | Marca `v0.1.0-foundation` como liberado | Ivan | `3370a2e` |
+| 28 | [#29](https://github.com/AzopG/rapidgo-variant/pull/29) | Producer con key `order_id` | Ivan | `2ed94d7` |
+| 28 | [#30](https://github.com/AzopG/rapidgo-variant/pull/30) | ADR-002: Spark en contenedor | Ivan | `151b700` |
+| 28 | [#31](https://github.com/AzopG/rapidgo-variant/pull/31) | Ingesta a Parquet con ruta de rechazo | Andrés | `7949e35` |
+| 28 | [#32](https://github.com/AzopG/rapidgo-variant/pull/32) | Alertas A1 y A2 con cooldown | Andrés | `dff107a` |
+| 28 | [#34](https://github.com/AzopG/rapidgo-variant/pull/34) | Plan y checkpoint de la semana | Ivan | `f13dc10` |
+| 29 | [#35](https://github.com/AzopG/rapidgo-variant/pull/35) | Workflow de CI (#13) | Luis | `2e7d356` |
+| 29 | [#37](https://github.com/AzopG/rapidgo-variant/pull/37) | `verify_pipeline` end-to-end (#33) | Luis | `17e589d` |
+| 29 | [#40](https://github.com/AzopG/rapidgo-variant/pull/40) | `--structure-only` en CI (#33) | Luis | `6372555` |
+| 29 | [#41](https://github.com/AzopG/rapidgo-variant/pull/41) | Serializar escritura en `curated/alerts` | Andrés | `d202675` |
+| 29 | [#39](https://github.com/AzopG/rapidgo-variant/pull/39) | Líder de particiones + retries del producer | Ivan | `141e054` |
 
-Issues cerrados vía PR: **#6, #7, #8, #9, #10, #11, #14**.
+Issues cerrados vía PR: **#6, #7, #8, #9, #10, #11, #13, #14, #33, #38**.
 
 ---
 
@@ -61,8 +69,12 @@ Issues **#6**, **#7**, **#14** — entregados.
 
 **Orden de merge: #28 → #29 → #30.** Estaban apilados: cada uno salía del anterior.
 
-Pendiente de Ivan al cierre: release `v0.2.0-streaming`, **después** de que exista el
-workflow de CI — un release sin Actions no tiene evidencia que mostrar.
+Pendiente de Ivan al cierre: release `v0.2.0-streaming`. El CI ya existe y está en verde,
+que era la condición: un release sin Actions no tenía evidencia que mostrar.
+
+Colaboró además en dos defectos que no eran de su alcance, porque trababan la verificación
+end-to-end: el PR #39 (líder de particiones + retries del producer) y la revisión de #31,
+#32, #35, #37, #40 y #41.
 
 ---
 
@@ -125,24 +137,31 @@ El #12 pasó a Andrés porque el trabajo ya estaba hecho. El bloque que tenía L
 reemplaza por #33, que es lo que a la semana le falta de verdad: una verificación
 reproducible de que el pipeline corre.
 
-### PR 1 — `ci-workflow` (#13)
+### PR 1 — `ci-workflow` (#13) ✅ `2e7d356`
 
-- [ ] `.github/workflows/ci.yml` con los tres triggers: `push`, `pull_request` y
+- [x] `.github/workflows/ci.yml` con los tres triggers: `push`, `pull_request` y
       `workflow_dispatch`.
-- [ ] `python -m compileall -q producer spark tests scripts`.
-- [ ] `pytest -v`.
-- [ ] `docker compose config --quiet`.
-- [ ] Al menos un test en el repo, porque `pytest` sin tests sale con **exit code 5**.
-- [ ] Evidencia: una corrida roja y una verde en la pestaña Actions del PR.
+- [x] `python -m compileall -q producer spark tests scripts`.
+- [x] `pytest -v`.
+- [x] `docker compose config --quiet`.
+- [x] Al menos un test en el repo, porque `pytest` sin tests sale con **exit code 5**.
+- [x] Evidencia: corridas en la pestaña Actions del PR.
 
-### PR 2 — `verify-pipeline` (#33)
+### PR 2 — `verify-pipeline` (#33) ✅ `17e589d`
 
-- [ ] `scripts/verify_pipeline.py`: levanta Kafka, crea el topic, publica con el
+- [x] `scripts/verify_pipeline.py`: levanta Kafka, crea el topic, publica con el
       producer, corre los dos jobs `--once` sobre un lake temporal y verifica conteos.
-- [ ] Exit code distinto de 0 indicando el paso que falló; 0 con resumen.
-- [ ] Modo sin Docker que valide solo estructura y argumentos, para que corra en CI.
-- [ ] `tests/test_verify_pipeline.py` de la parte pura, sin Docker.
-- [ ] No toca `spark/` ni `producer/`.
+- [x] Exit code distinto de 0 indicando el paso que falló; 0 con resumen.
+- [x] Modo sin Docker que valide solo estructura y argumentos, para que corra en CI.
+- [x] `tests/test_verify_pipeline.py` de la parte pura, sin Docker.
+- [x] No toca `spark/` ni `producer/`.
+
+### PR 3 — `--structure-only` en CI (#33) ✅ `6372555`
+
+El script ya existía; lo que faltaba era que corriera en cada PR. Tres líneas en el
+workflow: valida los archivos, los flags de los dos jobs y el `container_name` del compose
+sin necesitar Docker en el runner. Encontró su propio valor el mismo día: siguió en verde
+después de #41, que tocó `spark/alerts_job.py`.
 
 ### Se considera terminado cuando
 
@@ -193,8 +212,15 @@ Estas costaron horas de prueba el 27 de octubre. Están en el
 
 | Requisito | Quién | Estado |
 | --- | --- | --- |
-| Un PR sustancial por integrante | los tres | Andrés ✅ · Ivan ✅ · Luis pendiente |
-| Review a un PR ajeno | los tres | Ivan ✅ (#31, #32) · Andrés ✅ (#28–#32) · Luis pendiente |
-| `workflow_dispatch` manual | los tres | bloqueado por #13 |
-| `docs/checkpoints/semana2.md` | Ivan | ✅ |
-| Release `v0.2.0-streaming` | Ivan | pendiente de #13 |
+| Un PR sustancial por integrante | los tres | Ivan ✅ (#28, #29, #30, #34, #39) · Andrés ✅ (#31, #32, #41) · Luis ✅ (#35, #37, #40) |
+| Review a un PR ajeno | los tres | Ivan ✅ (6) · Andrés ✅ (6) · **Luis ❌ (0)** |
+| Issue asignado cerrado vía PR | los tres | Ivan ✅ (#6, #7, #14) · Andrés ✅ (#8–#11) · Luis ✅ (#13, #33) |
+| `workflow_dispatch` manual | los tres | ✅ los tres, corridas del 29 en verde |
+| `docs/checkpoints/semana2.md` | Ivan | ✅ corregido con la evidencia final |
+| Release `v0.2.0-streaming` | Ivan | pendiente de publicar |
+
+**Lo único que falta de la entrega es la review de Luis.** La rotación planificada era
+`Luis revisa a Andrés`, y quedó sin ejecutar: Andrés revisó a Ivan (#28–#30, #34, #39) e
+Ivan revisó a Andrés (#31, #32, #41) y a Luis (#35, #37, #40), pero Luis no revisó ningún
+PR ajeno. Se resuelve con una review suya a cualquier PR de otro integrante; el candidato
+natural es el PR corto que cierre #12.
