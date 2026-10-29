@@ -54,5 +54,8 @@ jobs:
       - name: Ejecutar pruebas (pytest)
         run: python -m pytest -v
 
+      - name: Verificar estructura del pipeline (#33)
+        run: python -m scripts.verify_pipeline --structure-only
+
       - name: Validar docker-compose.yml
         run: docker compose config --quiet
