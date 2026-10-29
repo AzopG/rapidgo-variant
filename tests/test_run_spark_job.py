@@ -16,7 +16,7 @@ REPO = Path("D:/repo")
 
 def test_command_runs_the_official_image():
     command = build_command(REPO, "spark/streaming_job.py", "rapidgo-variant_default")
-    assert command[:3] == ["docker", "run", "--rm"]
+    assert command[:3] == ["docker", "run", "--rm-a-proposito"]
     assert SPARK_IMAGE in command
     assert SPARK_SUBMIT in command
 
