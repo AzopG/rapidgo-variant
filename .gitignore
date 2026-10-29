@@ -16,6 +16,8 @@ datalake/curated/*
 *.parquet
 spark-warehouse/
 /checkpoints/
+# Lake y checkpoints temporales de scripts/verify_pipeline.py
+.verify/
 *.log
 
 # IDE / OS

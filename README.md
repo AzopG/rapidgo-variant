@@ -237,6 +237,32 @@ pytest -v
 
 Las pruebas no necesitan Kafka ni Spark levantados: cubren la lógica pura del proyecto.
 
+### Verificación end-to-end
+
+Un solo comando levanta Kafka, crea un topic propio de la corrida, publica 300 eventos
+degradados, inyecta un evento inválido por cada regla del contrato, corre los dos jobs
+`--once` sobre un lake temporal en `.verify/<id>/` y verifica los conteos:
+
+```bash
+python -m scripts.verify_pipeline
+```
+
+```text
+VERIFY publicados=300 inyectados_invalidos=7
+VERIFY raw=300 processed=300 rechazados=7 alertas=...
+VERIFY resultado=OK
+```
+
+Sale con `0` si todo cumple, `1` si los conteos o el lake no cuadran, `2` si falta algo
+en la estructura y `3` si falla un paso (Docker, Kafka, producer o Spark), nombrando el
+paso. El resumen queda en `.verify/<id>/resumen.txt` como evidencia del checkpoint.
+
+Sin Docker (es lo que corre en CI):
+
+```bash
+python -m scripts.verify_pipeline --structure-only
+```
+
 ## Organización del trabajo
 
 - **Tablero Kanban:** https://github.com/users/AzopG/projects/1
