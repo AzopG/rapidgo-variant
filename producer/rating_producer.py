@@ -65,6 +65,13 @@ REASON_WEIGHTS_NORMAL = {
     "other": 0.03,
 }
 
+# NotLeaderForPartition y los errores de metadata transitorios son retriables para
+# Kafka. El default de kafka-python es 0 reintentos, asi que el primer send contra un
+# topic recien creado abortaba la corrida entera en vez de reintentar.
+# 5 x 500 ms = 2.5 s, muy por debajo del timeout de 15 s de cada envio.
+PRODUCER_RETRIES = 5
+PRODUCER_RETRY_BACKOFF_MS = 500
+
 
 @dataclass(frozen=True)
 class ProducerConfig:
@@ -178,6 +185,8 @@ def publish(events: Iterable[dict[str, Any]], config: ProducerConfig) -> RunRepo
         value_serializer=lambda value: json.dumps(value).encode("utf-8"),
         acks="all",
         linger_ms=5,
+        retries=PRODUCER_RETRIES,
+        retry_backoff_ms=PRODUCER_RETRY_BACKOFF_MS,
         client_id="rapidgo-producer",
     )
     report = RunReport()
