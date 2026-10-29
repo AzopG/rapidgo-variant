@@ -21,8 +21,9 @@ from __future__ import annotations
 
 import argparse
 import sys
+import time
 from dataclasses import dataclass
-from typing import Any, Mapping
+from typing import Any, Callable, Mapping
 
 from kafka.admin import (
     ConfigResource,
@@ -40,6 +41,18 @@ DEFAULT_BOOTSTRAP = "localhost:9092"
 
 # Codigo de error que devuelve Kafka cuando el topic no existe.
 UNKNOWN_TOPIC = 3
+
+# Lider que Kafka usa para "todavia no asignado".
+UNASSIGNED_LEADER = -1
+
+# Kafka publica el topic en el metadata antes de elegir lider de sus particiones.
+# Escribir en esa ventana devuelve NotLeaderForPartitionError, asi que el script espera.
+LEADER_TIMEOUT_SECONDS = 30.0
+LEADER_POLL_SECONDS = 0.2
+
+
+class TopicNotReady(RuntimeError):
+    """El topic existe pero Kafka no asigno lider a todas sus particiones a tiempo."""
 
 
 @dataclass(frozen=True)
@@ -205,13 +218,60 @@ def apply(
         print(f"{topic}: configuracion actualizada")
 
 
-def describe(snapshot: TopicSnapshot) -> str:
+def leaderless_partitions(described: Any) -> list[int]:
+    """IDs de las particiones que todavia no tienen lider asignado.
+
+    Una lista vacia significa que el topic ya acepta escrituras. Cuando la respuesta
+    no alcanza para saberlo (el topic aun no es visible en el metadata) se devuelve el
+    centinela, para que el llamador siga esperando en vez de publicar sobre el vacio.
+    """
+    first = (described or [None])[0]
+    if not first:
+        return [UNASSIGNED_LEADER]
+    if first.get("error_code") not in (None, 0):
+        return [UNASSIGNED_LEADER]
+    partitions = first.get("partitions") or []
+    if not partitions:
+        return [UNASSIGNED_LEADER]
+    return [
+        partition.get("partition", UNASSIGNED_LEADER)
+        for partition in partitions
+        if partition.get("leader") in (None, UNASSIGNED_LEADER)
+    ]
+
+
+def wait_for_leaders(
+    describe_topics: Callable[[], Any],
+    timeout: float = LEADER_TIMEOUT_SECONDS,
+    poll_interval: float = LEADER_POLL_SECONDS,
+    sleep: Callable[[float], None] = time.sleep,
+) -> float:
+    """Espera a que todas las particiones tengan lider y devuelve los segundos esperados.
+
+    Ataca la causa y no el sintoma: un producer con retries sobrevive a
+    ``NotLeaderForPartitionError``, pero la corrida se vuelve lenta y la evidencia
+    queda llena de reintentos. Esperar aca es deterministico y se mide.
+    """
+    waited = 0.0
+    while True:
+        pending = leaderless_partitions(describe_topics())
+        if not pending:
+            return waited
+        if waited >= timeout:
+            raise TopicNotReady(
+                f"las particiones {pending} siguen sin lider despues de {timeout:g}s"
+            )
+        sleep(poll_interval)
+        waited += poll_interval
+
+
+def describe(snapshot: TopicSnapshot, topic: str = TOPIC) -> str:
     """Resumen legible del topic para la evidencia del Issue."""
     retention_days = None
     if snapshot.retention_ms is not None:
         retention_days = snapshot.retention_ms / 86_400_000
     return (
-        f"topic={TOPIC} exists={snapshot.exists} "
+        f"topic={topic} exists={snapshot.exists} "
         f"partitions={snapshot.partitions} "
         f"replication_factor={snapshot.replication_factor} "
         f"retention_ms={snapshot.retention_ms} "
@@ -231,6 +291,12 @@ def main(argv: list[str] | None = None) -> int:
         action="store_true",
         help="Muestra la accion que aplicaria sin modificar el broker.",
     )
+    parser.add_argument(
+        "--leader-timeout",
+        type=float,
+        default=LEADER_TIMEOUT_SECONDS,
+        help="Segundos maximos a esperar por el lider de las particiones.",
+    )
     args = parser.parse_args(argv)
 
     admin = KafkaAdminClient(
@@ -241,15 +307,26 @@ def main(argv: list[str] | None = None) -> int:
     try:
         snapshot = read_snapshot(admin, args.topic)
         action = plan(snapshot)
-        print(f"estado observado: {describe(snapshot)}")
+        print(f"estado observado: {describe(snapshot, args.topic)}")
         print(f"accion: {action}")
         apply(admin, action, snapshot, args.topic, args.dry_run)
 
         if args.dry_run:
             return 0
 
+        try:
+            waited = wait_for_leaders(
+                lambda: admin.describe_topics([args.topic]),
+                timeout=args.leader_timeout,
+            )
+        except TopicNotReady as exc:
+            print(f"ERROR: {exc}", file=sys.stderr)
+            return 1
+        if waited:
+            print(f"{args.topic}: lideres asignados tras {waited:.1f}s")
+
         final = read_snapshot(admin, args.topic)
-        print(f"estado final: {describe(final)}")
+        print(f"estado final: {describe(final, args.topic)}")
         if plan(final) != "noop":
             print("ERROR: el topic no quedo en el estado esperado", file=sys.stderr)
             return 1
