@@ -9,6 +9,10 @@ Ventanas por `occurred_at`, no por hora de llegada. Las dos alertas se evaluan g
 por `zone_id` y se escriben en `datalake/curated/alerts` con el valor observado, el
 umbral que las disparo y la ventana, para poder auditar por que sono.
 
+Las dos queries escriben a la misma salida, asi que la persistencia pasa por
+`spark/alerts_writer.py`: Spark no admite dos committers concurrentes sobre una misma
+ruta y sin serializar se pierden filas con `ParentNotDirectoryException`.
+
 Cooldown: una alerta por `(alerta, zona, motivo)` cada 15 minutos. Se mide contra el
 `window_end` de la ventana que la disparo, asi que dos ventanas consecutivas de 10
 minutos no generan dos alertas de la misma condicion sostenida. Al arrancar, el
@@ -38,6 +42,7 @@ from spark.alert_rules import (  # noqa: E402
     cooldown_allows,
     cooldown_key,
 )
+from spark.alerts_writer import append_alerts  # noqa: E402
 from spark.sources import (  # noqa: E402
     DEFAULT_CHECKPOINTS,
     DEFAULT_LAKE,
@@ -88,11 +93,8 @@ def seed_cooldown(spark, lake: Path) -> dict[tuple, datetime]:
 
 
 def _emit(spark, lake: Path, records: list[tuple]) -> None:
-    if not records:
-        return
-    spark.createDataFrame(records, schema=ALERT_SCHEMA).write.mode("append").parquet(
-        str(alerts_path(lake))
-    )
+    """Persiste las alertas del batch. Serializado: A1 y A2 comparten la salida."""
+    append_alerts(spark, alerts_path(lake), records, ALERT_SCHEMA)
 
 
 def write_a1(batch_df, batch_id, lake: Path, state: dict[tuple, datetime]) -> None:
