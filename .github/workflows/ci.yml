@@ -1,0 +1,58 @@
+# CI de RapidGo 360 - Variante 7 (Issue #13)
+name: CI RapidGo
+
+run-name: CI ${{ github.event_name }} por ${{ github.actor }}
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  validar:
+    name: compileall + pytest + compose
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+
+    steps:
+      - name: Descargar repositorio
+        uses: actions/checkout@v6
+
+      - name: Configurar Python 3.13
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.13"
+          cache: pip
+
+      - name: Instalar dependencias
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+
+      - name: Validar sintaxis (compileall)
+        run: python -m compileall -q producer spark tests scripts
+
+      # pytest sin tests sale con exit code 5; este guard falla antes y explica por que.
+      - name: Verificar que existen tests
+        run: |
+          total=$(python -m pytest --collect-only -q | grep -c '::' || true)
+          echo "tests recolectados: $total"
+          if [ "$total" -eq 0 ]; then
+            echo "::error title=Sin tests::pytest no encontro tests en tests/ (saldria con exit code 5)."
+            exit 1
+          fi
+
+      - name: Ejecutar pruebas (pytest)
+        run: python -m pytest -v
+
+      - name: Validar docker-compose.yml
+        run: docker compose config --quiet
