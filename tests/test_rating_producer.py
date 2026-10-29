@@ -10,11 +10,14 @@ from producer.rating_producer import (
     COMPLAINT_REASONS,
     EVENT_TYPE,
     EVENT_VERSION,
+    PRODUCER_RETRIES,
+    PRODUCER_RETRY_BACKOFF_MS,
     ProducerConfig,
     RunReport,
     build_event,
     generate_events,
     iso_utc,
+    publish,
 )
 
 NOW = datetime(2026, 10, 29, 12, 0, tzinfo=timezone.utc)
@@ -145,3 +148,57 @@ def test_build_event_accepts_any_degradation_range(degradation):
     # El rango se valida en la CLI; la funcion pura no debe romper.
     event = build_event(random.Random(1), NOW, degradation=degradation)
     assert 1 <= event["rating"] <= 5
+
+
+# ------------------------------------------------------------------ publicacion real
+# NotLeaderForPartition es un error retriable de Kafka: sin retries el primer send
+# contra un topic recien creado mata la corrida entera.
+
+
+class _Metadata:
+    partition = 0
+    offset = 0
+
+
+class _Future:
+    def get(self, timeout=None):  # noqa: ARG002
+        return _Metadata()
+
+
+def _capture_producer_kwargs(monkeypatch):
+    captured = {}
+
+    class FakeProducer:
+        def __init__(self, **kwargs):
+            captured.update(kwargs)
+
+        def send(self, *args, **kwargs):  # noqa: ARG002
+            return _Future()
+
+        def flush(self, timeout=None):  # noqa: ARG002
+            return None
+
+        def close(self, timeout=None):  # noqa: ARG002
+            return None
+
+    monkeypatch.setattr("kafka.KafkaProducer", FakeProducer)
+    return captured
+
+
+def test_publish_retries_transient_kafka_errors(monkeypatch):
+    captured = _capture_producer_kwargs(monkeypatch)
+
+    publish([build_event(random.Random(1), NOW)], ProducerConfig(rate=1.0, duration=1.0))
+
+    assert captured["retries"] == PRODUCER_RETRIES >= 1
+    assert captured["retry_backoff_ms"] == PRODUCER_RETRY_BACKOFF_MS >= 100
+
+
+def test_publish_keeps_acks_all_and_publishes(monkeypatch):
+    captured = _capture_producer_kwargs(monkeypatch)
+    event = build_event(random.Random(1), NOW)
+
+    report = publish([event], ProducerConfig(rate=1.0, duration=1.0))
+
+    assert captured["acks"] == "all"
+    assert report.published == 1
