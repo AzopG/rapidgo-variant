@@ -101,12 +101,14 @@ Issues **#8**, **#9**, **#10**, **#11**, **#12**.
       critical; evaluado global y por `zone_id`.
 - [x] Ambas persistidas en `datalake/curated/alerts` con valor observado y umbral.
 
-### PR 3 — cierre formal de #12 (pendiente)
+### PR 3 — cierre de #12 ✅ (sin PR)
 
-Los tests de **#12** ya se entregaron dentro de #31 y #32
+Los tests de **#12** se entregaron dentro de #31 y #32
 (`tests/test_spark_transformations.py` y `tests/test_alert_rules.py`), pero el issue no
-se cerró porque esos PRs no lo referenciaban. Falta un PR corto que lo cierre y deje la
-trazabilidad issue → PR. No necesita ser sustancial: los dos PRs de arriba ya lo son.
+se cerró porque esos PRs no lo referenciaban. En vez de abrir un PR que solo agregara un
+documento, la trazabilidad regla → test quedó en el propio issue, con los nombres exactos
+de cada test y una sección de lo que esos tests **no** cubren (dedup, idempotencia al
+reiniciar, y la divergencia del `occurred_at` sin zona horaria). Cerrado el 30/10.
 
 ### Cómo correrlo
 
@@ -213,14 +215,12 @@ Estas costaron horas de prueba el 27 de octubre. Están en el
 | Requisito | Quién | Estado |
 | --- | --- | --- |
 | Un PR sustancial por integrante | los tres | Ivan ✅ (#28, #29, #30, #34, #39) · Andrés ✅ (#31, #32, #41) · Luis ✅ (#35, #37, #40) |
-| Review a un PR ajeno | los tres | Ivan ✅ (6) · Andrés ✅ (6) · **Luis ❌ (0)** |
-| Issue asignado cerrado vía PR | los tres | Ivan ✅ (#6, #7, #14) · Andrés ✅ (#8–#11) · Luis ✅ (#13, #33) |
+| Review a un PR ajeno | los tres | Ivan ✅ (#31, #32, #35, #37, #40, #41) · Andrés ✅ (#28–#30, #34, #39) · Luis ✅ (#42) |
+| Issue asignado cerrado vía PR | los tres | Ivan ✅ (#6, #7, #14) · Andrés ✅ (#8–#11, y #12 en el issue) · Luis ✅ (#13, #33) |
 | `workflow_dispatch` manual | los tres | ✅ los tres, corridas del 29 en verde |
 | `docs/checkpoints/semana2.md` | Ivan | ✅ corregido con la evidencia final |
-| Release `v0.2.0-streaming` | Ivan | pendiente de publicar |
+| Release `v0.2.0-streaming` | Ivan | ✅ publicado sobre `main` en `b1b0247` |
 
-**Lo único que falta de la entrega es la review de Luis.** La rotación planificada era
-`Luis revisa a Andrés`, y quedó sin ejecutar: Andrés revisó a Ivan (#28–#30, #34, #39) e
-Ivan revisó a Andrés (#31, #32, #41) y a Luis (#35, #37, #40), pero Luis no revisó ningún
-PR ajeno. Se resuelve con una review suya a cualquier PR de otro integrante; el candidato
-natural es el PR corto que cierre #12.
+Los seis requisitos están cumplidos por los tres integrantes. El único que estuvo en riesgo
+fue la review de Luis: la rotación planificada era `Luis revisa a Andrés` y se resolvió con
+su review del PR #42, que además era el último de documentación de la semana.
