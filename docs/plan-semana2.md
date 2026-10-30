@@ -69,8 +69,8 @@ Issues **#6**, **#7**, **#14** — entregados.
 
 **Orden de merge: #28 → #29 → #30.** Estaban apilados: cada uno salía del anterior.
 
-Pendiente de Ivan al cierre: release `v0.2.0-streaming`. El CI ya existe y está en verde,
-que era la condición: un release sin Actions no tenía evidencia que mostrar.
+Release `v0.2.0-streaming` publicado sobre `main` en `b1b0247`. La condición era que el CI
+existiera y estuviera en verde: un release sin Actions no tenía evidencia que mostrar.
 
 Colaboró además en dos defectos que no eran de su alcance, porque trababan la verificación
 end-to-end: el PR #39 (líder de particiones + retries del producer) y la revisión de #31,
