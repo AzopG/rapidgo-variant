@@ -84,6 +84,7 @@ class ProducerConfig:
     dominant_reason: str = "late_delivery"
     topic: str = TOPIC
     bootstrap_servers: str = DEFAULT_BOOTSTRAP
+    backfill_minutes: float = 0.0
 
 
 @dataclass
@@ -161,11 +162,30 @@ def build_event(
 
 
 def generate_events(config: ProducerConfig, start: datetime | None = None) -> Iterator[dict[str, Any]]:
-    """Genera eventos a la tasa configurada hasta agotar la duracion."""
+    """Genera eventos a la tasa configurada hasta agotar la duracion.
+
+    Con `backfill_minutes > 0`, los `occurred_at` se reparten uniformemente en esa
+    ventana hacia atras en vez de avanzar desde ahora. Sirve para que K3 tenga los 60
+    minutos anteriores con los cuales comparar: sin historico, la tendencia siempre
+    queda sin base.
+    """
     rng = random.Random(config.seed)
     now = start or datetime.now(timezone.utc)
-    interval = 1.0 / config.rate if config.rate > 0 else 0.0
     total = int(config.rate * config.duration)
+
+    if config.backfill_minutes > 0:
+        span = timedelta(minutes=config.backfill_minutes)
+        step = span / max(total - 1, 1)
+        for index in range(total):
+            yield build_event(
+                rng,
+                now - span + step * index,
+                degradation=config.degradation,
+                dominant_reason=config.dominant_reason,
+            )
+        return
+
+    interval = 1.0 / config.rate if config.rate > 0 else 0.0
     for index in range(total):
         yield build_event(
             rng,
@@ -232,6 +252,12 @@ def main(argv: list[str] | None = None) -> int:
     )
     parser.add_argument("--dominant-reason", default="late_delivery", choices=COMPLAINT_REASONS)
     parser.add_argument(
+        "--backfill-minutes",
+        type=float,
+        default=0.0,
+        help="reparte occurred_at en esa ventana hacia atras (para KPIs de tendencia)",
+    )
+    parser.add_argument(
         "--dry-run",
         action="store_true",
         help="genera y muestra eventos sin publicarlos",
@@ -244,6 +270,9 @@ def main(argv: list[str] | None = None) -> int:
     if args.rate <= 0 or args.duration <= 0:
         print("ERROR: --rate y --duration deben ser mayores que 0", file=sys.stderr)
         return 2
+    if args.backfill_minutes < 0:
+        print("ERROR: --backfill-minutes no puede ser negativo", file=sys.stderr)
+        return 2
 
     config = ProducerConfig(
         rate=args.rate,
@@ -253,6 +282,7 @@ def main(argv: list[str] | None = None) -> int:
         dominant_reason=args.dominant_reason,
         topic=args.topic,
         bootstrap_servers=args.bootstrap_servers,
+        backfill_minutes=args.backfill_minutes,
     )
 
     if args.dry_run:
@@ -266,7 +296,8 @@ def main(argv: list[str] | None = None) -> int:
     print(
         f"publicando en {config.topic} ({config.bootstrap_servers}) "
         f"rate={config.rate}/s duration={config.duration}s "
-        f"degradation={config.degradation} seed={config.seed}"
+        f"degradation={config.degradation} seed={config.seed} "
+        f"backfill_minutes={config.backfill_minutes}"
     )
     try:
         report = publish(generate_events(config), config)

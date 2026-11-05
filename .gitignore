@@ -12,6 +12,8 @@ htmlcov/
 datalake/raw/*
 datalake/processed/*
 datalake/curated/*
+# Lake de una corrida orquestada por Airflow (issue #15)
+datalake/runs/
 !datalake/**/.gitkeep
 *.parquet
 spark-warehouse/
@@ -19,6 +21,12 @@ spark-warehouse/
 # Lake y checkpoints temporales de scripts/verify_pipeline.py
 .verify/
 *.log
+
+# Logs de Airflow (bind mount de docker-compose)
+logs/
+
+# Estado local de herramientas (skill registry)
+.atl/
 
 # IDE / OS
 .idea/

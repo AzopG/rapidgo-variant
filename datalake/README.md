@@ -3,6 +3,11 @@
 Los datos se organizan en tres capas dentro de `datalake/`. Los datos en sí **no se
 versionan** (ver `.gitignore`); acá vive solo la estructura y su documentación.
 
+Una corrida orquestada por Airflow (Semana 3) escribe en `datalake/runs/<run_id>/` con
+la misma estructura de tres capas, para que dos corridas no compartan estado y los
+conteos del reporte sean reproducibles. El lake de la raíz sigue siendo el de los jobs
+manuales de la Semana 2.
+
 | Capa | Ruta | Contenido |
 | --- | --- | --- |
 | Raw | `datalake/raw/` | Eventos tal como llegan de Kafka, sin transformar. Formato JSON, particionado por `dt` y `hour`. |

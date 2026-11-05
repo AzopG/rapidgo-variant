@@ -82,6 +82,8 @@ de arriba resume el mismo flujo para quien lee sin imágenes.
 rapidgo-variant/
 ├── .github/workflows/     # CI (y release en Semana 4)
 ├── airflow/dags/          # DAGs de orquestación
+├── orchestration/         # contexto y comandos que arma el DAG (sin Airflow)
+├── docker/airflow/        # imagen de Airflow con Java + PySpark (ADR-003)
 ├── producer/              # generador de eventos
 ├── spark/                 # jobs de Structured Streaming
 ├── scripts/               # utilidades de infraestructura (topic de Kafka)
@@ -162,6 +164,7 @@ python -m producer.rating_producer --rate 10 --duration 30 --seed 7
 | `--seed` | aleatoria | semilla: la misma semilla reproduce la misma secuencia |
 | `--degradation` | `0.0` | proporción `0..1` de eventos con rating 1–2 y motivo dominante |
 | `--dominant-reason` | `late_delivery` | motivo que se concentra en modo degradación |
+| `--backfill-minutes` | `0` | reparte los `occurred_at` en esa ventana hacia atrás (para K3) |
 | `--dry-run` | — | genera y muestra eventos sin publicarlos |
 
 Salida al terminar, con los offsets reales por partición:
@@ -229,6 +232,39 @@ python -m producer.rating_producer --rate 10 --duration 30 --degradation 0.7 --d
 python -m scripts.run_spark_job spark/alerts_job.py -- --once
 ```
 
+### 6. KPIs y orquestación con Airflow
+
+El DAG `rapidgo_pipeline` corre la corrida completa: crea un topic propio, publica
+eventos con `--backfill-minutes 120` (para que K3 tenga los 60 minutos anteriores),
+ejecuta ingesta, alertas, el cálculo de los tres KPIs y las tasks de calidad de #16.
+
+```bash
+docker compose build airflow-init
+docker compose up -d postgres airflow-init
+docker compose up -d airflow-webserver airflow-scheduler
+```
+
+UI en http://localhost:8080 (`admin` / `admin`). El DAG se dispara a mano
+(`schedule=None`) y cada corrida escribe en `datalake/runs/<run_id>/`, con su propio
+topic y sus checkpoints. Los reintentos están configurados en `default_args`.
+
+Los jobs de Spark corren dentro del contenedor de Airflow con `--master local[*]`: la
+imagen trae Java 17 y PySpark 4.0.1, y el conector de Kafka se resuelve con Ivy. La
+decisión y sus límites están en
+[ADR-003](docs/decisions/ADR-003-airflow-spark-execution.md).
+
+El job de KPIs también se puede correr suelto, sobre el lake de la Semana 2:
+
+```bash
+python -m scripts.run_spark_job spark/kpis_job.py
+```
+
+| Salida | KPI |
+| --- | --- |
+| `curated/kpi_rating_avg` | media por ventana de 10 min, global y por zona, canal y repartidor |
+| `curated/kpi_top_reasons` | top 5 de motivos por ventana de 15 min, con participación |
+| `curated/kpi_trend` | últimos 60 min contra los 60 anteriores, con delta y estado |
+
 ## Pruebas
 
 ```bash
@@ -276,7 +312,7 @@ python -m scripts.verify_pipeline --structure-only
 | Release | Semana | Alcance | Estado |
 | --- | --- | --- | --- |
 | `v0.1.0-foundation` | 1 | Arquitectura, contrato de evento, KPIs, alertas, Kanban, ADR-001 | [publicado](https://github.com/AzopG/rapidgo-variant/releases/tag/v0.1.0-foundation) |
-| `v0.2.0-streaming` | 2 | Kafka + Spark Streaming + Data Lake + pruebas + CI | pendiente |
+| `v0.2.0-streaming` | 2 | Kafka + Spark Streaming + Data Lake + pruebas + CI | [publicado](https://github.com/AzopG/rapidgo-variant/releases/tag/v0.2.0-streaming) |
 | `v0.3.0-orchestration` | 3 | DAG de Airflow, calidad, recuperación ante fallos, CI ampliado | pendiente |
 | `v1.0.0` | 4 | Quality gate, README final, release y video | pendiente |
 
