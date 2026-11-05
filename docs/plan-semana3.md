@@ -181,3 +181,34 @@ de constraints de Python 3.12 en un job aparte del CI, y se valida con `DagBag`
 - Contrato del evento: [`event-contract.md`](event-contract.md)
 - KPIs y umbrales: [`kpis-alerts.md`](kpis-alerts.md)
 - Decisiones: [ADR-001](decisions/ADR-001-kafka-key-partitions.md) · [ADR-002](decisions/ADR-002-spark-execution-environment.md) · [ADR-003](decisions/ADR-003-airflow-spark-execution.md)
+
+---
+
+## 8. Matriz de cierre — Semana 3 (`v0.3.0-orchestración`)
+
+| Integrante | GitHub | PR propio (sustancial) | Review a PR ajeno | Issue cerrado vía PR | workflow_dispatch | Estado |
+|------------|--------|------------------------|-------------------|----------------------|-------------------|--------|
+| Ivan Palacio | [AzopG](https://github.com/AzopG) | [#45 — #15 DAG Airflow](https://github.com/AzopG/rapidgo-variant/pull/45) | Revisó #46 (#18) | #15 cierra con `Closes #15` | ✅ | Cerrado |
+| Andrés Maldonado | [FelipeMaldonado10](https://github.com/FelipeMaldonado10) | [#46 — #18 CI DAG + paridad K3](https://github.com/AzopG/rapidgo-variant/pull/46) | Revisó #45 (#15) | #18 cierra con `Closes #18` | ✅ | Cerrado |
+| Luis Jaraba | [vannysys](https://github.com/vannysys) | [#47 — #16 calidad y reporte](https://github.com/AzopG/rapidgo-variant/pull/47) | Revisó #48 (#17) | #16 cierra con `Closes #16` | ✅ | Cerrado |
+
+### PRs de la semana (todos mergeados en `main`)
+
+| PR | Issue | Autor | Título |
+|-----|-------|-------|--------|
+| [#45](https://github.com/AzopG/rapidgo-variant/pull/45) | #15 | Ivan | feat(airflow): orchestrate the pipeline with a nine-task DAG |
+| [#46](https://github.com/AzopG/rapidgo-variant/pull/46) | #18 | Andrés | ci(dag): validar el DAG de Airflow y fijar la paridad de K3 |
+| [#47](https://github.com/AzopG/rapidgo-variant/pull/47) | #16 | Luis | feat(quality): calidad de raw/curated y reporte de la corrida |
+| [#48](https://github.com/AzopG/rapidgo-variant/pull/48) | #17 | Ivan | docs(checkpoint): fallo controlado kafka y recuperación |
+
+### Release
+
+- [`v0.3.0-orchestración`](https://github.com/AzopG/rapidgo-variant/releases/tag/v0.3.0-orchestración) — tag `v0.3.0-orchestration` sobre `main`.
+
+### Evidencia técnica
+
+- `pytest -q`: 205 + 100 tests locales (Spark validado en CI del PR #46).
+- `docker compose config --quiet`: exit 0.
+- Corrida real del DAG: 9/9 tareas en `SUCCESS` (300 eventos, `raw=300 processed=300 rechazados=0`, 19 alertas, K3 `estado=estable`).
+- Fallo controlado (Kafka caído): `kafka.errors.NoBrokersAvailable` → recuperación con 9/9 en `SUCCESS` (`docs/checkpoints/semana3.md`).
+
