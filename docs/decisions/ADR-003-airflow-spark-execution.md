@@ -7,7 +7,7 @@
 
 ## Contexto
 
-La Semana 2 dejó los jobs de PySpark corriendo en un contenedor Linux por invitation de
+La Semana 2 dejó los jobs de PySpark corriendo en un contenedor Linux por medio de
 `scripts/run_spark_job.py`, que hace `docker run` **desde el host** (ADR-002). La Semana 3
 tiene que orquestarlos con Airflow, y un contenedor de Airflow no puede ejecutar `docker`
 sin que se le monte el socket del daemon.
