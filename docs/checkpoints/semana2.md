@@ -1,7 +1,7 @@
 # Checkpoint Semana 2 — RapidGo 360, Variante 7
 
 **Equipo 7:** Andres Maldonado · Ivan Palacio · Luis Jaraba
-**Release:** `v0.2.0-streaming` — tag sobre `main` posterior al merge de este documento (ver §7)
+**Release:** `v0.2.0-streaming` — publicado sobre `main` en `b1b0247` (ver §7)
 **Fecha de cierre:** 2026-10-29
 
 ## 1. Qué quedó funcionando
@@ -217,17 +217,21 @@ Ninguna de estas afecta la corrección del pipeline para los criterios de la sem
 
 ## 6. Pendiente al cierre
 
-| Qué | Quién | Issue |
-| --- | --- | --- |
-| PR que cierre formalmente los tests de contrato y reglas | Andrés | #12 |
+**Nada del alcance de la semana 2.**
 
-Todo lo demás del alcance de la semana está cerrado: #13 y #33 (CI y verificación
-end-to-end), #38 (pipeline reproducible), y el `workflow_dispatch` de los tres integrantes.
+| Issue | Qué era | Cómo se cerró |
+| --- | --- | --- |
+| #13 | Workflow de CI | #35 |
+| #33 | Verificación end-to-end | #37 y #40 |
+| #38 | Pipeline reproducible | #39 y #41 |
+| #12 | Tests de contrato y reglas de negocio | El trabajo se entregó en #31 y #32; la trazabilidad regla → test quedó en el propio issue, en vez de abrir un PR que solo agregara un documento |
+
+Los `workflow_dispatch` de los tres integrantes están hechos y en verde.
 
 ## 7. Release `v0.2.0-streaming`
 
-Se publica sobre `main` después del merge de este documento. Contenido verificado: los 157
-tests, el CI en verde y las dos corridas consecutivas de `verify_pipeline` de §2.
+Publicado sobre `main` en `b1b0247`. Contenido verificado: los 157 tests, el CI en verde y
+las dos corridas consecutivas de `verify_pipeline` de §2.
 
 Queda **por fuera** del release la creación del DAG de Airflow, las tareas de calidad sobre
 `raw` y `curated`, y el quality gate: son alcance de la semana 3.
