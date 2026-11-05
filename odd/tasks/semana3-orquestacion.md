@@ -58,10 +58,10 @@ Acotación para esta entrega: el ADR se escribe ahora; el checkpoint se completa
 | T9 | Evidencia: build de la imagen, grafo en la UI y corrida de las tasks que no dependen de #16 | S4 | inline | ✅ build OK; grafo con 9 tasks; 6 tasks success |
 | T10 | Commit, PR y revisión de Andrés | S1-S12 | inline | ✅ PR #45 mergeado por Andrés en `60f0b25` |
 | T11 | #18 (Andrés): CI valida el DAG + paridad de K3 | S1-S3 | inline | ✅ PR #46 mergeado en `be7fff4`; checks verdes |
+| T12 | #16 (Luis): calidad raw/curated y reporte | S12 | inline | ✅ PR #47 mergeado en `66cefea`; `quality/` en `main` |
 
-## Estado pendiente (fuera de este documento)
+## Estado pendiente
 
-- #16 (calidad y reporte): **Luis lo retoma**. El contrato ya está publicado en el issue; el DAG importa `quality` dentro de la función, así que no bloquea el merge de #15 ni #18.
 - #17 (fallo controlado): pendiente; #19 (checkpoint de semana 3) depende de él.
 
 ## Log
@@ -75,4 +75,4 @@ Acotación para esta entrega: el ADR se escribe ahora; el checkpoint se completa
 - L5. K3 necesita datos de hace 2 h. El producer solo generaba `occurred_at` hacia adelante, así que se le agregó `--backfill-minutes`, retrocompatible y con tests propios. El DAG lo usa con 120 min por defecto (`RAPIDGO_BACKFILL_MINUTES`).
 - L6. El contrato de #16 se publicó en el issue antes de que Luis empiece: `check_raw(lake_dir)`, `check_curated(lake_dir)` y `build_report(lake_dir, quality)`. Las tasks de calidad importan `quality` dentro de la función para que el DAG siga siendo importable mientras el módulo no exista.
 - L7. Verificación local: `compileall` de `producer spark tests scripts orchestration airflow/dags` exit 0; `pytest -q` 205 passed; `docker compose config` exit 0; el DAG se importó con un stub de Airflow y creó las 9 tasks con dependencias.
-- L8. Primer `airflow dags test` falló en `calcular_kpis`: `spark_job_command` le pasaba `--topic` y `--checkpoint-dir` al job batch, y `argparse` los rechaza. Fix: parámetro `streaming=False` en el builder, con test de contrato (`tests/test_kpis_job_contract.py`). Segunda corrida: `iniciar_corrida`, `crear_topic`, `generar_eventos` (300 publicados), `ejecutar_ingesta` (`raw=300 processed=300 rechazados=0`), `ejecutar_alertas` (19 alertas) y `calcular_kpis` (4460 filas; K3 `avg_now=2.7267`, `avg_previous=2.5772`, `delta=0.1495`, `state=estable`) en success. `calidad_raw`, `calidad_curated` y `generar_reporte` fallan con `ModuleNotFoundError: No module named 'quality'`, que es el estado esperado hasta #16.
+- L8. Primera corrida del DAG completa: `iniciar_corrida`, `crear_topic`, `generar_eventos` (300 publicados), `ejecutar_ingesta` (`raw=300 processed=300 rechazados=0`), `ejecutar_alertas` (19 alertas), `calcular_kpis` (4460 filas; K3 `avg_now=2.7267`, `avg_previous=2.5772`, `delta=0.1495`, `state=estable`) en success. Las 3 tasks de calidad pasaron de fallar con `ModuleNotFoundError: No module named 'quality'` a correr contra `quality/` de Luis (#16, PR #47), que ya está en `main`.
