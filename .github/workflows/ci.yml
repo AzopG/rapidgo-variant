@@ -1,4 +1,4 @@
-# CI de RapidGo 360 - Variante 7 (Issue #13)
+# CI de RapidGo 360 - Variante 7 (Issues #13 y #18)
 name: CI RapidGo
 
 run-name: CI ${{ github.event_name }} por ${{ github.actor }}
@@ -33,6 +33,14 @@ jobs:
           python-version: "3.13"
           cache: pip
 
+      # PySpark 4 exige Java 17 o superior. El runner lo trae, pero fijarlo evita que
+      # una actualización del runner cambie la version y rompa la sesion de Spark.
+      - name: Configurar Java 17
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "17"
+
       - name: Instalar dependencias
         run: |
           python -m pip install --upgrade pip
@@ -54,8 +62,46 @@ jobs:
       - name: Ejecutar pruebas (pytest)
         run: python -m pytest -v
 
+      # Issue #18: las reglas de negocio de la semana 3, con nombre propio en Actions.
+      # La de K3 levanta una sesion de Spark real y compara el SQL contra la regla pura.
+      - name: Pruebas de reglas de negocio (#18)
+        run: |
+          python -m pytest -v \
+            tests/test_kpi_rules.py \
+            tests/test_kpi_trend_parity.py \
+            tests/test_orchestration_pipeline.py
+
       - name: Verificar estructura del pipeline (#33)
         run: python -m scripts.verify_pipeline --structure-only
 
       - name: Validar docker-compose.yml
         run: docker compose config --quiet
+
+  dag:
+    name: DAG de Airflow importable y valido (#18)
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
+
+    steps:
+      - name: Descargar repositorio
+        uses: actions/checkout@v6
+
+      # Airflow 2.10.4 es la version de la imagen de ADR-003 y no soporta Python 3.13:
+      # por eso este job usa 3.12. Ver ADR-004 para la decision y el costo medido.
+      - name: Configurar Python 3.12
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Instalar Airflow pinneado
+        run: |
+          python -m pip install --upgrade pip
+          pip install "apache-airflow==2.10.4" \
+            --constraint "https://raw.githubusercontent.com/apache/airflow/constraints-2.10.4/constraints-3.12.txt"
+          pip install "pytest==8.3.3"
+
+      - name: Validar el DAG (DagBag real, sin base de datos)
+        run: python -m scripts.validate_dag
+
+      - name: Probar el validador y el DAG importable
+        run: python -m pytest -v tests/test_dag_import.py tests/test_validate_dag.py

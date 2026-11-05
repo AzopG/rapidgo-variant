@@ -167,7 +167,10 @@ Hoy `scripts/run_spark_job.py` hace `docker run` desde el host. Un contenedor de
 | Stub liviano del módulo `airflow` | Rápido | Valida el import, no que el DAG sea válido |
 | Construir la imagen en CI | Es la validación más fiel | Lo más caro de las tres |
 
-Es la decisión de Andrés en #18, pero conviene tomarla antes de que el DAG exista.
+**Decidido (Andrés, #18):** se instala `apache-airflow==2.10.4` pinneado con el archivo
+de constraints de Python 3.12 en un job aparte del CI, y se valida con `DagBag`
+(`scripts/validate_dag.py`), no con un stub. El costo medido y los límites están en
+[ADR-004](decisions/ADR-004-ci-dag-validation.md).
 
 ---
 

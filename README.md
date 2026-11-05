@@ -93,7 +93,7 @@ rapidgo-variant/
 ├── docs/
 │   ├── arquitectura.png
 │   ├── checkpoints/       # semana1.md, semana2.md, semana3.md
-│   └── decisions/         # ADR-001, ADR-002, ADR-003
+│   └── decisions/         # ADR-001, ADR-002, ADR-003, ADR-004
 ├── docker-compose.yml
 ├── requirements.txt
 ├── README.md
@@ -271,7 +271,21 @@ python -m scripts.run_spark_job spark/kpis_job.py
 pytest -v
 ```
 
-Las pruebas no necesitan Kafka ni Spark levantados: cubren la lógica pura del proyecto.
+Las pruebas no necesitan Kafka ni un cluster de Spark: cubren la lógica pura del
+proyecto. La prueba de paridad de K3 sí levanta una sesión local de Spark (`local[1]`)
+para comparar el SQL de `spark/kpis_job.py` contra la tabla de `spark/kpi_rules.py`; por
+eso necesita Java 17, que el CI fija.
+
+### CI
+
+Dos jobs en `.github/workflows/ci.yml`:
+
+| Job | Qué corre |
+| --- | --- |
+| `compileall + pytest + compose` | compilación, la suite completa, las reglas de negocio de la Semana 3 con nombre propio, la estructura del pipeline y `docker compose config` |
+| `DAG de Airflow importable y valido (#18)` | `python -m scripts.validate_dag` con `apache-airflow==2.10.4` sobre Python 3.12, más las pruebas del validador y del DAG |
+
+La decisión y el costo medido están en [ADR-004](docs/decisions/ADR-004-ci-dag-validation.md).
 
 ### Verificación end-to-end
 
