@@ -62,9 +62,7 @@ Acotación para esta entrega: el ADR se escribe ahora; el checkpoint se completa
 
 ## Estado pendiente
 
-- #17 (fallo controlado): pendiente; #19 (checkpoint de semana 3) depende de él.
-
-## Log
+- #17 (fallo controlado kafka): cubierto por este PR #48, con el checkpoint en `docs/checkpoints/semana3.md`. #19 (release y matriz de cierre) es el siguiente paso.
 
 ## Log
 

@@ -14,7 +14,26 @@ Kafka detenido (`docker compose stop kafka`). El productor de topics no pudo con
 kafka.errors.NoBrokersAvailable: NoBrokersAvailable
 ```
 
-La task agotó los 3 intentos (1 ejecución + 2 `retries` configurados en `default_args`) y Airflow la marcó como `FAILED`. Ninguna tarea posterior se ejecutó (`ejecutar_ingesta`, `ejecutar_alertas`, `calcular_kpis`, `calidad_*`, `generar_reporte` quedaron bloqueadas por dependencia). No se corrompió ningún dato: cada corrida usa su propio topic, lake y checkpoints aislados por `run_id`.
+La task `crear_topic` agotó los 3 intentos (1 ejecución + 2 `retries`) y Airflow la marcó como `FAILED`:
+
+```
+Marking task as FAILED. dag_id=rapidgo_pipeline, task_id=crear_topic, run_id=manual__2026-11-05T10:00:00+00:00
+```
+
+Después de restaurar Kafka, la corrida de recuperación terminó con las 9 tareas en `SUCCESS`:
+
+```
+Marking task as SUCCESS. dag_id=rapidgo_pipeline, task_id=iniciar_corrida, ...
+Marking task as SUCCESS. dag_id=rapidgo_pipeline, task_id=crear_topic, ...
+Marking task as SUCCESS. dag_id=rapidgo_pipeline, task_id=generar_eventos, ...
+Marking task as SUCCESS. dag_id=rapidgo_pipeline, task_id=ejecutar_ingesta, ...
+Marking task as SUCCESS. dag_id=rapidgo_pipeline, task_id=calidad_raw, ...
+Marking task as SUCCESS. dag_id=rapidgo_pipeline, task_id=ejecutar_alertas, ...
+Marking task as SUCCESS. dag_id=rapidgo_pipeline, task_id=calcular_kpis, ...
+Marking task as SUCCESS. dag_id=rapidgo_pipeline, task_id=calidad_curated, ...
+Marking task as SUCCESS. dag_id=rapidgo_pipeline, task_id=generar_reporte, ...
+```
+
 
 ## Corrida de reproducción
 
@@ -46,7 +65,7 @@ No hubo cambio de código: la estrategia de recuperación ya existía en el DAG.
   - `max_active_runs = 1`, `catchup = False`, `schedule = None` (una corrida a la vez, sin backfill histórico).
   - Cada tarea es idempotente por construcción (checkpoints de ingesta/alertas, `overwrite` de KPIs, reescritura del reporte).
 
-Con esos retries, al restaurar Kafka la misma corrida reintentó `crear_topic` y completó el flujo completo sin intervención manual.
+Con esos retries, al restaurar Kafka se lanzó una nueva corrida (`airflow dags test rapidgo_pipeline 2026-11-05T23:00:00+00:00`) que reintentó `crear_topic` y completó el flujo completo sin intervención manual.
 
 ## Evidencia asociada
 
