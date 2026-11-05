@@ -28,7 +28,7 @@ Alcance autorizado: `scripts/validate_dag.py`, `tests/test_dag_import.py`, `test
 | T3 | `tests/test_dag_import.py` (positivo) y `tests/test_validate_dag.py` (negativo: un DAG roto tiene que fallar) | S1, S2 | inline | hecho: 10 passed con Airflow 2.10.4 |
 | T4 | `tests/test_kpi_trend_parity.py`: el `state` de `k3_frame` contra `kpi_rules.trend_state` | S2 | inline | hecho: 9 passed con Spark 4.0.1 |
 | T5 | Job `dag` en `ci.yml` (Python 3.12 + Airflow pinneado) y Java 17 en el job principal | S1, S3 | inline | hecho |
-| T6 | Verificación: corrida de Actions del PR y de `main`, con el paso nuevo | S3, S4 | inline | pendiente |
+| T6 | Verificación: corrida de Actions del PR y de `main`, con el paso nuevo | S3, S4 | inline | hecho: PR #46, run `42067045521` en verde |
 | T7 | #17: fallo controlado, log real, tareas afectadas y corrida posterior exitosa | S5-S7 | inline | pendiente |
 | T8 | `docs/checkpoints/semana3.md` con el log y el commit que resolvió el fallo | S8 | inline | pendiente |
 
@@ -52,4 +52,12 @@ L4 — Evidencia de las verificaciones del bloque #18:
 | `compileall`, `verify_pipeline --structure-only`, `docker compose config` | local | exit 0 |
 
 L5 — Trampa encontrada: `pytest.importorskip("airflow")` NO saltea en un entorno sin Airflow, porque `airflow/` del repo es un paquete de espacio de nombres y `import airflow` funciona. Hay que preguntar por `airflow.models`. Lo detectó la suite del contenedor de Spark (7 failed), no la del job `dag`.
+
+L6 — Evidencia en Actions (PR #46, run `42067045521`, `0dba4e6`):
+
+| Job | Duración | Salida |
+| --- | --- | --- |
+| `DAG de Airflow importable y valido (#18)` | 32 s | `DAG_OK dag=rapidgo_pipeline tasks=9 edges=9 retries=2`, `10 passed` |
+| `compileall + pytest + compose` | 51 s | `collected 217 items / 2 skipped`, 217 passed; los 9 casos de paridad de K3 corrieron con Spark real (están en el log con nombre y estado) |
+
 
