@@ -3,7 +3,7 @@
 **Equipo 7 · RapidGo 360 · Variante 7**
 **Objetivo:** orquestar con Airflow la calidad y la agregación sobre el lake, y demostrar que el pipeline se recupera de un fallo real.
 
-> **Estado:** fase 0 **implementada y verificada** en el PR #44. Se cierra al mergear; la semana 3 arranca sobre esa base.
+> **Estado:** fase 0 **mergeada** en `main` como `638319d` (PR #44). La semana 3 arranca sobre esa base.
 
 ---
 
@@ -152,10 +152,10 @@ Hoy `scripts/run_spark_job.py` hace `docker run` desde el host. Un contenedor de
 
 | Opción | A favor | En contra |
 | --- | --- | --- |
-| Imagen propia de Airflow con Java + PySpark, `spark-submit --master local[*]` adentro | Sin docker-in-docker, reproducible, mismo camino en CI | Imagen más pesada de construir y mantener |
-| Montar el socket de Docker y seguir usando `run_spark_job.py` | Menos código nuevo | Le da al contenedor control del daemon; feo de defender |
+| **A. Imagen propia de Airflow con Java + PySpark, `spark-submit --master local[*]` adentro** | Sin docker-in-docker, reproducible, mismo camino en CI | Imagen más pesada de construir y mantener |
+| B. Montar el socket de Docker y seguir usando `run_spark_job.py` | Menos código nuevo | Le da al contenedor control del daemon; feo de defender |
 
-Es el contenido de ADR-003. Se decide antes de escribir el DAG.
+**Decidido:** opción A. Los jobs corren con `python <job>.py` dentro del contenedor de Airflow, con `--master local[*]` y el conector resuelto por Ivy. El detalle completo, las consecuencias y la estrategia de recuperación están en [ADR-003](decisions/ADR-003-airflow-spark-execution.md).
 
 ### 6.2 Cómo valida CI el DAG
 
@@ -177,4 +177,4 @@ Es la decisión de Andrés en #18, pero conviene tomarla antes de que el DAG exi
 - Checkpoint de la semana 2: [`semana2.md`](checkpoints/semana2.md)
 - Contrato del evento: [`event-contract.md`](event-contract.md)
 - KPIs y umbrales: [`kpis-alerts.md`](kpis-alerts.md)
-- Decisiones: [ADR-001](decisions/ADR-001-kafka-key-partitions.md) · [ADR-002](decisions/ADR-002-spark-execution-environment.md)
+- Decisiones: [ADR-001](decisions/ADR-001-kafka-key-partitions.md) · [ADR-002](decisions/ADR-002-spark-execution-environment.md) · [ADR-003](decisions/ADR-003-airflow-spark-execution.md)
