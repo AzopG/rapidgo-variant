@@ -5,3 +5,5 @@ pyspark==4.0.1
 kafka-python-ng==2.2.3
 pytest==8.3.3
 python-dotenv==1.0.1
+# Semana 3 (#16): quality/ lee el Parquet del lake sin Spark.
+pyarrow==21.0.0
