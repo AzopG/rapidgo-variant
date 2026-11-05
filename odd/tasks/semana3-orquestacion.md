@@ -56,7 +56,7 @@ Acotación para esta entrega: el ADR se escribe ahora; el checkpoint se completa
 | T7 | `docs/decisions/ADR-003-airflow-spark-execution.md` | S9, S11 | inline | ✅ |
 | T8 | Contrato de calidad publicado en el issue #16 | S12 | inline | ✅ [comentario](https://github.com/AzopG/rapidgo-variant/issues/16#issuecomment-6648465184) |
 | T9 | Evidencia: build de la imagen, grafo en la UI y corrida de las tasks que no dependen de #16 | S4 | inline | ✅ build OK; grafo con 9 tasks; 6 tasks success |
-| T10 | Commit, PR y revisión de Andrés | S1-S12 | inline | 🔄 |
+| T10 | Commit, PR y revisión de Andrés | S1-S12 | inline | ✅ PR [#45](https://github.com/AzopG/rapidgo-variant/pull/45), review pedida a Andrés |
 
 ## Log
 
