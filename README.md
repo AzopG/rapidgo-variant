@@ -347,7 +347,7 @@ python -m scripts.verify_pipeline --structure-only
 | --- | --- | --- | --- |
 | `v0.1.0-foundation` | 1 | Arquitectura, contrato de evento, KPIs, alertas, Kanban, ADR-001 | [publicado](https://github.com/AzopG/rapidgo-variant/releases/tag/v0.1.0-foundation) |
 | `v0.2.0-streaming` | 2 | Kafka + Spark Streaming + Data Lake + pruebas + CI | [publicado](https://github.com/AzopG/rapidgo-variant/releases/tag/v0.2.0-streaming) |
-| `v0.3.0-orchestration` | 3 | DAG de Airflow, calidad, recuperación ante fallos, CI ampliado | pendiente |
+| `v0.3.0-orchestration` | 3 | DAG de Airflow, calidad, recuperación ante fallos, CI ampliado | [publicado](https://github.com/AzopG/rapidgo-variant/releases/tag/v0.3.0-orchestration) |
 | `v1.0.0` | 4 | Quality gate, README final, release y video | pendiente |
 
 ## Equipo y contribuciones
@@ -358,7 +358,7 @@ se completa en la Semana 4, a partir del historial real del repositorio.
 ## Enlaces
 
 - Video final: _pendiente_
-- Release actual: [`v0.1.0-foundation`](https://github.com/AzopG/rapidgo-variant/releases/tag/v0.1.0-foundation)
+- Release actual: [`v0.3.0-orchestration`](https://github.com/AzopG/rapidgo-variant/releases/tag/v0.3.0-orchestration)
 - Tablero Kanban: https://github.com/users/AzopG/projects/1
 - Contrato del evento: [`docs/event-contract.md`](docs/event-contract.md)
 - KPIs y alertas: [`docs/kpis-alerts.md`](docs/kpis-alerts.md)
