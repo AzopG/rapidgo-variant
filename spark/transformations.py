@@ -11,6 +11,7 @@ Las expresiones Spark viven en :func:`rejection_reason_column` y
 
 from __future__ import annotations
 
+import re
 from datetime import datetime, timedelta, timezone
 from typing import Any, Mapping
 
@@ -39,13 +40,6 @@ HIGH_RATING_MIN = 4
 
 # Un evento con occurred_at mas de 5 minutos en el futuro se descarta.
 MAX_FUTURE_SKEW = timedelta(minutes=5)
-
-# Clasificacion del rating (transformacion 2 del Issue #8).
-RATING_CLASSES: dict[str, str] = {
-    "critico": "rating_1_2",
-    "medio": "rating_3",
-    "bueno": "rating_4_5",
-}
 
 WATERMARK = "30 minutes"
 
@@ -90,6 +84,16 @@ REASON_INVALID_CHANNEL = "invalid_channel"
 REASON_INVALID_COMPLAINT_REASON = "invalid_complaint_reason"
 REASON_MISSING_COMPLAINT_REASON = "missing_complaint_reason"
 
+# Un motivo compuesto se une siempre con el mismo separador. Si cambia, hay que
+# volver a parsear `datalake/curated/ratings_rejected` con el separador anterior.
+REASON_SEPARATOR = ";"
+
+# El contrato exige `occurred_at` ISO-8601 UTC (docs/event-contract.md:18): un valor
+# sin zona horaria explicita es ambiguo y se descarta igual que uno malformado.
+# `try_to_timestamp` acepta un timestamp sin zona, asi que el job necesita esta
+# comprobacion aparte para no aceptar en produccion lo que el validador rechaza.
+OCCURRED_AT_TZ_PATTERN = r"(?:Z|[+-]\d{2}:?\d{2})$"
+
 
 def rating_class(rating: Any) -> str | None:
     """Clasifica el rating en critico (1-2), medio (3) o bueno (4-5)."""
@@ -112,9 +116,18 @@ def zone_region(zone_id: Any) -> str | None:
     return region if region in ZONE_REGIONS else None
 
 
+def occurred_at_has_explicit_timezone(value: Any) -> bool:
+    """True si el texto termina con `Z` o un offset explicito.
+
+    Es la misma regla que aplica :func:`rejection_reason_column` en Spark: el
+    validador puro y el job no pueden aceptar eventos distintos.
+    """
+    return isinstance(value, str) and re.search(OCCURRED_AT_TZ_PATTERN, value) is not None
+
+
 def parse_occurred_at(value: Any) -> datetime | None:
     """Parsea `occurred_at` ISO-8601. Exige zona horaria: el contrato dice UTC."""
-    if not isinstance(value, str) or not value:
+    if not occurred_at_has_explicit_timezone(value):
         return None
     try:
         parsed = datetime.fromisoformat(value.replace("Z", "+00:00"))
@@ -204,7 +217,7 @@ def rejection_reason_column(now: datetime | None = None) -> Any:
     checks = [
         # nullif: concat_ws devuelve "" cuando no falta nada, y un "" en la lista
         # externa dejaria el motivo con un ";" adelante.
-        F.nullif(F.concat_ws(",", *missing), F.lit("")),
+        F.nullif(F.concat_ws(REASON_SEPARATOR, *missing), F.lit("")),
         F.when(F.col("event_type") != EVENT_TYPE, F.lit(REASON_INVALID_EVENT_TYPE)),
         F.when(
             F.col("rating").isNotNull()
@@ -212,7 +225,11 @@ def rejection_reason_column(now: datetime | None = None) -> Any:
             F.lit(REASON_RATING_OUT_OF_RANGE),
         ),
         F.when(
-            (F.col("occurred_at").isNotNull()) & F.col("event_ts").isNull(),
+            F.col("occurred_at").isNotNull()
+            & (
+                F.col("event_ts").isNull()
+                | ~F.col("occurred_at").rlike(OCCURRED_AT_TZ_PATTERN)
+            ),
             F.lit(REASON_INVALID_OCCURRED_AT),
         ),
         F.when(F.col("event_ts") > future_limit, F.lit(REASON_FUTURE_OCCURRED_AT)),
@@ -230,7 +247,7 @@ def rejection_reason_column(now: datetime | None = None) -> Any:
             F.lit(REASON_MISSING_COMPLAINT_REASON),
         ),
     ]
-    return F.nullif(F.concat_ws(";", *checks), F.lit(""))
+    return F.nullif(F.concat_ws(REASON_SEPARATOR, *checks), F.lit(""))
 
 
 def transform_plan(now: datetime | None = None) -> list[tuple[str, Any]]:

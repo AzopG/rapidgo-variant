@@ -17,6 +17,10 @@ A2_ID = "A2"
 
 A1_WINDOW = "10 minutes"
 A2_WINDOW = "15 minutes"
+# docs/kpis-alerts.md: K1 y K2 son deslizantes cada 1 minuto, y las alertas evaluan
+# esos mismos KPIs contra sus umbrales. Tumbling solo cambiaba el momento del aviso.
+A1_SLIDE = "1 minute"
+A2_SLIDE = "1 minute"
 COOLDOWN = timedelta(minutes=15)
 
 A1_WARNING_BELOW = 3.60

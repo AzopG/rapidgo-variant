@@ -241,7 +241,12 @@ def invalid_events(
     return [
         ("missing:customer_id", missing),
         ("rating_out_of_range", variant(2, rating=7, complaint_reason=None)),
-        ("invalid_occurred_at", variant(3, occurred_at="ayer por la tarde")),
+        # Sin zona horaria: `try_to_timestamp` lo aceptaria, el contrato no. Es el caso
+        # que divergia entre el validador puro y el job (fase 0, riesgo 7).
+        (
+            "invalid_occurred_at",
+            variant(3, occurred_at=now.replace(tzinfo=None).isoformat(timespec="milliseconds")),
+        ),
         ("future_occurred_at", variant(4, occurred_at=iso(now + timedelta(hours=2)))),
         ("invalid_channel", variant(5, channel="fax")),
         ("invalid_complaint_reason", variant(6, complaint_reason="mal_humor")),

@@ -1,4 +1,4 @@
-﻿"""Job de ingesta: Kafka `rapidgo.ratings` -> data lake en Parquet (Issues #8 y #9).
+"""Job de ingesta: Kafka `rapidgo.ratings` -> data lake en Parquet (Issues #8 y #9).
 
 Corre en el contenedor de Spark (ADR-002), no en el host:
 
@@ -61,10 +61,51 @@ REJECTED_COLUMNS = (
     "raw_value",
 )
 
+# Identidad para deduplicar un rechazado: `event_id` si vino; si falta (era obligatorio),
+# su posicion en Kafka, que es unica y estable aunque el batch se reintente.
+REJECTED_DEDUP_COLUMN = "dedup_key"
+
+
+def _functions():
+    """Importa pyspark recien cuando se arma el plan; las pruebas usan un doble."""
+    from pyspark.sql import functions as F  # noqa: PLC0415
+
+    return F
+
+
+def rejected_stream(classified):
+    """Rechazados deduplicados, con la misma regla que el stream de validos.
+
+    El watermark va sobre `kafka_ts` (hora de ingesta, siempre presente) y no sobre
+    `event_ts`: un evento rechazado por `occurred_at` invalido no tiene timestamp del
+    contrato con el cual acotar el estado de la deduplicacion.
+    """
+    F = _functions()
+
+    return (
+        classified.where(F.col("rejection_reason").isNotNull())
+        .withColumn(
+            REJECTED_DEDUP_COLUMN,
+            F.coalesce(
+                F.col("event_id"),
+                F.concat_ws(
+                    ":",
+                    F.lit("offset"),
+                    F.col("kafka_partition"),
+                    F.col("kafka_offset"),
+                ),
+            ),
+        )
+        .withWatermark("kafka_ts", WATERMARK)
+        .dropDuplicates([REJECTED_DEDUP_COLUMN])
+        .select(*REJECTED_COLUMNS)
+        .withColumn("dt", F.date_format(F.col("kafka_ts"), "yyyy-MM-dd"))
+    )
+
 
 def prepare(spark, args):
     """Separa validos de rechazados y aplica las transformaciones del contrato."""
-    from pyspark.sql import functions as F  # noqa: PLC0415
+    F = _functions()
 
     parsed = read_kafka(
         spark,
@@ -81,12 +122,7 @@ def prepare(spark, args):
         valid = valid.withColumn(name, expression)
     deduplicated = valid.withWatermark("event_ts", WATERMARK).dropDuplicates(["event_id"])
 
-    rejected = (
-        classified.where(F.col("rejection_reason").isNotNull())
-        .select(*REJECTED_COLUMNS)
-        .withColumn("dt", F.date_format(F.col("kafka_ts"), "yyyy-MM-dd"))
-    )
-    return deduplicated, rejected
+    return deduplicated, rejected_stream(classified)
 
 
 def write_raw_and_processed(batch_df, batch_id, lake: Path):

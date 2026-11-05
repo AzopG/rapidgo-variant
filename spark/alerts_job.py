@@ -1,4 +1,4 @@
-﻿"""Job de alertas: A1 (caida de calificacion) y A2 (concentracion de reclamos).
+"""Job de alertas: A1 (caida de calificacion) y A2 (concentracion de reclamos).
 
 Issues #10 y #11. Corre en el contenedor de Spark (ADR-002):
 
@@ -34,7 +34,9 @@ if str(REPO_ROOT) not in sys.path:
 from pyspark.sql import types as T  # noqa: E402
 
 from spark.alert_rules import (  # noqa: E402
+    A1_SLIDE,
     A1_WINDOW,
+    A2_SLIDE,
     A2_WINDOW,
     GLOBAL_ZONE,
     a1_severity,
@@ -73,6 +75,13 @@ def alerts_path(lake: Path) -> Path:
     return lake / "curated" / "alerts"
 
 
+def _functions():
+    """Importa pyspark recien cuando se arma el plan; las pruebas usan un doble."""
+    from pyspark.sql import functions as F  # noqa: PLC0415
+
+    return F
+
+
 def seed_cooldown(spark, lake: Path) -> dict[tuple, datetime]:
     """Recupera el ultimo `window_end` por clave para que un reinicio respete el cooldown."""
     from pyspark.sql import functions as F  # noqa: PLC0415
@@ -102,18 +111,20 @@ def write_a1(batch_df, batch_id, lake: Path, state: dict[tuple, datetime]) -> No
     spark = batch_df.sparkSession
     now = datetime.now(timezone.utc)
     records: list[tuple] = []
+    pending: dict[tuple, datetime] = {}
     evaluated = 0
 
     for row in batch_df.collect():
+        # Cuenta ventanas evaluadas, no alertas disparadas: es la carga real del batch.
+        evaluated += 1
         decision = a1_severity(row.avg_rating, row.n)
         if decision is None:
             continue
-        evaluated += 1
         moment = row.window["end"]
         key = cooldown_key(decision.alert_id, row.zone_id, None)
-        if not cooldown_allows(key, moment, state):
+        if not cooldown_allows(key, moment, {**state, **pending}):
             continue
-        state[key] = moment
+        pending[key] = moment
         records.append(
             (
                 decision.alert_id,
@@ -131,6 +142,9 @@ def write_a1(batch_df, batch_id, lake: Path, state: dict[tuple, datetime]) -> No
         )
 
     _emit(spark, lake, records)
+    # El cooldown se marca recien despues de una escritura exitosa: si `_emit` falla,
+    # el reintento de la tarea vuelve a emitir la alerta en vez de perderla.
+    state.update(pending)
     print(
         f"A1 BATCH {batch_id} evaluadas={evaluated} alertas={len(records)}", flush=True
     )
@@ -143,12 +157,15 @@ def write_a2(batch_df, batch_id, lake: Path, state: dict[tuple, datetime]) -> No
     spark = batch_df.sparkSession
     now = datetime.now(timezone.utc)
     records: list[tuple] = []
+    pending: dict[tuple, datetime] = {}
     evaluated = 0
 
     for row in batch_df.collect():
         total = int(row.total_reclamos)
         if total == 0:
             continue
+        # Cuenta ventanas evaluadas; los motivos de cada ventana no son la unidad.
+        evaluated += 1
         moment = row.window["end"]
         for index, reason in enumerate(COMPLAINT_REASONS):
             n_reclamos = int(row[reason_column(index)] or 0)
@@ -156,11 +173,10 @@ def write_a2(batch_df, batch_id, lake: Path, state: dict[tuple, datetime]) -> No
             decision = a2_severity(share, n_reclamos)
             if decision is None:
                 continue
-            evaluated += 1
             key = cooldown_key(decision.alert_id, row.zone_id, reason)
-            if not cooldown_allows(key, moment, state):
+            if not cooldown_allows(key, moment, {**state, **pending}):
                 continue
-            state[key] = moment
+            pending[key] = moment
             records.append(
                 (
                     decision.alert_id,
@@ -178,6 +194,9 @@ def write_a2(batch_df, batch_id, lake: Path, state: dict[tuple, datetime]) -> No
             )
 
     _emit(spark, lake, records)
+    # Igual que A1: si la escritura falla, el cooldown no queda marcado y el reintento
+    # vuelve a emitir en vez de perder la alerta.
+    state.update(pending)
     print(
         f"A2 BATCH {batch_id} evaluadas={evaluated} alertas={len(records)}", flush=True
     )
@@ -203,18 +222,18 @@ def valid_events(spark, args):
 
 def scoped_for_aggregation(valid):
     """Agrega una copia etiquetada como GLOBAL: una sola agregacion cubre los dos niveles."""
-    from pyspark.sql import functions as F  # noqa: PLC0415
+    F = _functions()
 
     return valid.unionByName(valid.withColumn("zone_id", F.lit(GLOBAL_ZONE)))
 
 
 def a1_stream(valid):
-    from pyspark.sql import functions as F  # noqa: PLC0415
+    F = _functions()
 
     scoped = scoped_for_aggregation(valid)
-    return scoped.groupBy(F.window(F.col("event_ts"), A1_WINDOW), F.col("zone_id")).agg(
-        F.avg("rating").alias("avg_rating"), F.count("*").alias("n")
-    )
+    return scoped.groupBy(
+        F.window(F.col("event_ts"), A1_WINDOW, A1_SLIDE), F.col("zone_id")
+    ).agg(F.avg("rating").alias("avg_rating"), F.count("*").alias("n"))
 
 
 def a2_stream(valid):
@@ -224,7 +243,7 @@ def a2_stream(valid):
     participacion se calcula con conteos condicionales por motivo (la enumeracion del
     contrato es cerrada) en vez de joinear el total contra el conteo por motivo.
     """
-    from pyspark.sql import functions as F  # noqa: PLC0415
+    F = _functions()
 
     from spark.transformations import COMPLAINT_REASONS  # noqa: PLC0415
 
@@ -237,9 +256,9 @@ def a2_stream(valid):
                 reason_column(index)
             )
         )
-    return scoped.groupBy(F.window(F.col("event_ts"), A2_WINDOW), F.col("zone_id")).agg(
-        *aggregates
-    )
+    return scoped.groupBy(
+        F.window(F.col("event_ts"), A2_WINDOW, A2_SLIDE), F.col("zone_id")
+    ).agg(*aggregates)
 
 
 def reason_column(index: int) -> str:
