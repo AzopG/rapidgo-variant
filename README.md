@@ -253,6 +253,26 @@ imagen trae Java 17 y PySpark 4.0.1, y el conector de Kafka se resuelve con Ivy.
 decisión y sus límites están en
 [ADR-003](docs/decisions/ADR-003-airflow-spark-execution.md).
 
+#### Calidad y reporte (#16)
+
+Las tasks `calidad_raw`, `calidad_curated` y `generar_reporte` llaman a `quality/`,
+Python puro que lee el Parquet con `pyarrow` (sin Spark ni Airflow):
+
+| Función | Valida / escribe |
+| --- | --- |
+| `quality.checks.check_raw(lake_dir)` | `raw` y `processed` no vacíos, esquema del contrato, sin `event_id` duplicado, `processed <= raw`, rechazados con motivo |
+| `quality.checks.check_curated(lake_dir)` | K1, K2 y K3 presentes y en rango, `delta` coherente, `curated/alerts` con `ALERT_SCHEMA` |
+| `quality.report.build_report(lake_dir, quality)` | `datalake/runs/<run_id>/curated/report/report.json` con los 3 KPIs, las alertas y la calidad |
+
+Las dos funciones de calidad devuelven `{"ok", "checks", "metrics"}`. Un `ok=False` no
+falla la task: queda en el reporte. Un error de lectura sí la falla, y Airflow reintenta.
+
+Para ver el reporte de la última corrida:
+
+```bash
+docker compose exec airflow-scheduler bash -c "cat \$(ls -d /opt/rapidgo/datalake/runs/*/ | tail -1)curated/report/report.json"
+```
+
 El job de KPIs también se puede correr suelto, sobre el lake de la Semana 2:
 
 ```bash
