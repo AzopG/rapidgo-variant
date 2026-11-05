@@ -1,3 +1,36 @@
+# Airflow + Spark en el mismo contenedor (ADR-003): los jobs corren con
+# `python <job>.py` y `--master local[*]`, sin montar el socket de Docker.
+x-airflow-common: &airflow-common
+  build:
+    context: .
+    dockerfile: docker/airflow/Dockerfile
+  environment: &airflow-environment
+    AIRFLOW__CORE__EXECUTOR: LocalExecutor
+    AIRFLOW__DATABASE__SQL_ALCHEMY_CONN: postgresql+psycopg2://airflow:airflow@postgres/airflow
+    AIRFLOW__CORE__FERNET_KEY: ""
+    AIRFLOW__CORE__DAGS_ARE_PAUSED_AT_CREATION: "true"
+    AIRFLOW__CORE__LOAD_EXAMPLES: "false"
+    AIRFLOW__CORE__DEFAULT_TIMEZONE: UTC
+    AIRFLOW__API__AUTH_BACKENDS: airflow.api.auth.backend.basic_auth
+    AIRFLOW__SCHEDULER__ENABLE_HEALTH_CHECK: "true"
+    # El DAG importa `orchestration` y el producer, ambos dentro del repo montado.
+    PYTHONPATH: /opt/rapidgo
+    JAVA_HOME: /usr/lib/jvm/java-17-openjdk-amd64
+    # PySpark resuelve el conector con Ivy porque el wheel no trae `spark-submit`.
+    PYSPARK_SUBMIT_ARGS: "--master local[*] --packages org.apache.spark:spark-sql-kafka-0-10_2.13:4.0.1 pyspark-shell"
+    RAPIDGO_BOOTSTRAP: kafka:29092
+    RAPIDGO_BACKFILL_MINUTES: "120"
+  volumes: &airflow-volumes
+    - ./airflow/dags:/opt/airflow/dags
+    - ./logs/airflow:/opt/airflow/logs
+    - ./:/opt/rapidgo
+    - airflow_ivy:/opt/airflow/.ivy2
+  user: "${AIRFLOW_UID:-50000}:0"
+  depends_on:
+    postgres:
+      condition: service_healthy
+  restart: unless-stopped
+
 services:
   kafka:
     image: apache/kafka:3.9.0
@@ -36,8 +69,64 @@ services:
       retries: 12
       start_period: 20s
 
+  postgres:
+    image: postgres:16-alpine
+    container_name: rapidgo-postgres
+    environment:
+      POSTGRES_USER: airflow
+      POSTGRES_PASSWORD: airflow
+      POSTGRES_DB: airflow
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U airflow -d airflow"]
+      interval: 5s
+      timeout: 5s
+      retries: 12
+
+  airflow-init:
+    <<: *airflow-common
+    container_name: rapidgo-airflow-init
+    command:
+      - bash
+      - -c
+      - |
+        airflow db migrate
+        airflow users create \
+          --username admin --password admin \
+          --firstname Admin --lastname RapidGo \
+          --role Admin --email admin@rapidgo.local || true
+    restart: on-failure
+
+  airflow-webserver:
+    <<: *airflow-common
+    container_name: rapidgo-airflow-webserver
+    command: webserver
+    ports:
+      - "${AIRFLOW_WEBSERVER_PORT:-8080}:8080"
+    healthcheck:
+      test: ["CMD", "curl", "--fail", "http://localhost:8080/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+      start_period: 60s
+    depends_on:
+      airflow-init:
+        condition: service_completed_successfully
+      postgres:
+        condition: service_healthy
+
+  airflow-scheduler:
+    <<: *airflow-common
+    container_name: rapidgo-airflow-scheduler
+    command: scheduler
+    depends_on:
+      airflow-init:
+        condition: service_completed_successfully
+      postgres:
+        condition: service_healthy
+
 volumes:
   kafka_data:
-
-# Semana 2: se agregan aquí los servicios de producer y spark.
-# Semana 3: se agrega Airflow (webserver, scheduler, postgres).
+  postgres_data:
+  airflow_ivy:

@@ -1,0 +1,5 @@
+# Dependencias que el contenedor de Airflow necesita para ejecutar los jobs.
+# Airflow ya viene en la imagen base; aca solo va lo del pipeline.
+pyspark==4.0.1
+kafka-python-ng==2.2.3
+python-dotenv==1.0.1
