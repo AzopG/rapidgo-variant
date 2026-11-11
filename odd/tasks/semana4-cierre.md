@@ -15,10 +15,10 @@ Texto del issue, literal:
 - S3. "Pipeline reproducible siguiendo el README desde cero."
 - S4. "Evidencia: corrida final de Actions y prueba de instalación limpia."
 
-Requisito del plan de la semana (`docs/plan-semana4.md:26-31`), literal:
+Requisito del plan de la semana (`docs/plan-semana4.md:61-66`), literal:
 
-- S5. "Job de CI que corra `python -m scripts.verify_pipeline` completo (Kafka real vía `docker compose`, no solo `--structure-only`) sobre un lake temporal." (propuesta de implementación; el issue oficial exige CI verde y reproducibilidad, no este comando específico.)
-- S6. "`scripts/bootstrap_check.py` (o equivalente): verifica en limpio que existen venv, dependencias, topic, stack y estructura del lake, con un mensaje accionable por cada faltante." (opcional; no es un requisito literal del issue ni de la guía.)
+- S5. "Job de CI que corra `python -m scripts.verify_pipeline` completo (Kafka real vía `docker compose`, no solo `--structure-only`) sobre un lake temporal."
+- S6. "`scripts/bootstrap_check.py` (o equivalente): verifica en limpio que existen venv, dependencias, topic, stack y estructura del lake, con un mensaje accionable por cada faltante."
 
 ### #21 — README final
 
@@ -90,5 +90,6 @@ Texto del issue, literal:
 - L3. Orden: #20 → #23 → #21 → #22. El README (#21) depende del enlace del video (#23); el release (#22) depende de que todo esté en `main`.
 - L4. Riesgos heredados detectados: README con "23 Issues abiertos" vencido, "release en Semana 4" sin workflow, Kanban desactualizado y la prueba de paridad de K3 que falla solo en Windows local.
 - L5. PR #49 fue mergeado en `main` como `0297cb3`; no quedan PRs abiertos al iniciar #20.
-- L6. #20: `.github/workflows/ci.yml` ahora agrega `quality-gate`, dependiente de `validar` y `dag`, que ejecuta `python -m scripts.verify_pipeline` completo y publica `.verify/**/resumen.txt` como artefacto. No se implementó `bootstrap_check.py` porque es opcional.
-- L7. Verificación local: `pytest -q tests/test_verify_pipeline.py` → 48 passed; `docker compose config --quiet` → exit 0; `pytest -q` → 272 passed, 9 fallos conocidos de `tests/test_kpi_trend_parity.py` por crash del worker Spark en Windows; `python -m scripts.verify_pipeline` no pudo ejecutarse porque Docker Desktop no estaba disponible.
+- L6. #20: `.github/workflows/ci.yml` agrega `quality-gate`, dependiente de `validar` y `dag`, que ejecuta `python -m scripts.verify_pipeline` completo. La instalación limpia del runner y la corrida end-to-end cubren el equivalente operativo de la prueba de bootstrap; el resumen se publica como artefacto obligatorio con `include-hidden-files: true` e `if-no-files-found: error`.
+- L7. Verificación local: `pytest -q tests/test_verify_pipeline.py` → 48 passed; `docker compose config --quiet` → exit 0; `pytest -q` → 272 passed, 9 failed en `tests/test_kpi_trend_parity.py` por una limitación del entorno Spark/PySpark local de Windows; `python -m scripts.verify_pipeline` no pudo ejecutarse porque Docker Desktop no estaba disponible.
+- L8. Verificación Linux del mismo commit `7e60354` mediante Actions (`43106882082`): `validar` success, `dag` success y `Quality Gate end-to-end` success en 1m57s; `VERIFY publicados=300 inyectados_invalidos=7`, `raw=300 processed=300 rechazados=7 alertas=12`, partición `dt=2026-11-11/hour=21` y `VERIFY resultado=OK`. La evidencia se midió en un runner limpio, no se infiere.

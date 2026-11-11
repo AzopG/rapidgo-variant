@@ -153,6 +153,8 @@ Luis    revisa a  Andrés   (#22)
 
 **Recomendado:** A, con `--structure-only` como fallback documentado y un timeout explícito. Si el job end-to-end no es estable en tres corridas, se degrada a B y se deja el motivo escrito en el README.
 
+**Evidencia medida en Semana 4:** el mismo commit `7e60354` ejecutó el pipeline completo en Actions mediante el run [`43106882082`](https://github.com/AzopG/rapidgo-variant/actions/runs/43106882082). Los jobs `validar`, `dag` y `Quality Gate end-to-end` terminaron en `success`; el quality gate duró `1m57s` y produjo `VERIFY publicados=300 inyectados_invalidos=7`, `raw=300 processed=300 rechazados=7 alertas=12`, una partición `dt=2026-11-11/hour=21` y `VERIFY resultado=OK`. El runner limpio instaló las dependencias, levantó Kafka y ejecutó Spark contra el lake temporal.
+
 ### 5.3 Cómo se crea el tag
 
 | Opción | A favor | En contra |
@@ -173,6 +175,7 @@ Luis    revisa a  Andrés   (#22)
 | 3 | El Kanban quedó con los items de la semana 3 sin `Status` | GitHub Projects | La rúbrica mira el tablero; se corrige en la fase 0 |
 | 4 | El tag del release de la semana 3 dice `v0.3.0-orchestration` y el título del release dice `v0.3.0-orchestración` | GitHub Releases | Cosmético; se documenta y no se renombra |
 | 5 | La prueba `test_kpi_trend_parity.py` falla en Windows local por el worker de Spark | `tests/` | No es un fallo del código; el README debe decirlo para que la instalación limpia no parezca rota |
+| 6 | El job end-to-end de CI aún no tenía evidencia medida al redactar este plan | `.github/workflows/ci.yml` | Ya está resuelto: la corrida `43106882082` demostró que funciona en `1m57s` y dejó los conteos reales arriba |
 
 ---
 
