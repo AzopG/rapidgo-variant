@@ -105,3 +105,42 @@ jobs:
 
       - name: Probar el validador y el DAG importable
         run: python -m pytest -v tests/test_dag_import.py tests/test_validate_dag.py
+
+  quality-gate:
+    name: Quality Gate end-to-end
+    needs: [validar, dag]
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+
+    steps:
+      - name: Descargar repositorio
+        uses: actions/checkout@v6
+
+      - name: Configurar Python 3.13
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.13"
+          cache: pip
+
+      - name: Configurar Java 17
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "17"
+
+      - name: Instalar dependencias
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+
+      - name: Validar pipeline completo
+        run: python -m scripts.verify_pipeline
+
+      - name: Publicar evidencia del quality gate
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: quality-gate-evidence
+          path: .verify/**/resumen.txt
+          include-hidden-files: true
+          if-no-files-found: error
