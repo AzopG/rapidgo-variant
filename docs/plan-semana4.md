@@ -209,7 +209,7 @@ Estado al 12 de noviembre:
 
 | Integrante | GitHub | PR propio (sustancial) | Review a PR ajeno | Issue cerrado vía PR | workflow_dispatch | Estado |
 | --- | --- | --- | --- | --- | --- | --- |
-| Ivan Palacio | [AzopG](https://github.com/AzopG) | [#50](https://github.com/AzopG/rapidgo-variant/pull/50) mergeado · README final de #21 (`docs/readme-final`) | pendiente (#22) | [#20](https://github.com/AzopG/rapidgo-variant/issues/20) ✅ | [43112804120](https://github.com/AzopG/rapidgo-variant/actions/runs/43112804120) ✅ | En curso |
+| Ivan Palacio | [AzopG](https://github.com/AzopG) | [#50](https://github.com/AzopG/rapidgo-variant/pull/50) mergeado · [#51](https://github.com/AzopG/rapidgo-variant/pull/51) README de #21 | pendiente (#22) | [#20](https://github.com/AzopG/rapidgo-variant/issues/20) ✅ · #21 en #51 | [43112804120](https://github.com/AzopG/rapidgo-variant/actions/runs/43112804120) ✅ | En curso |
 | Andrés Maldonado | [FelipeMaldonado10](https://github.com/FelipeMaldonado10) | pendiente (#22) | [#50](https://github.com/AzopG/rapidgo-variant/pull/50) ✅ | pendiente (#22) | [43106882082](https://github.com/AzopG/rapidgo-variant/actions/runs/43106882082) ✅ | En curso |
 | Luis Jaraba | [vannysys](https://github.com/vannysys) | #21 lo asume Ivan (sin equipo hasta el sábado) | pendiente | pendiente (#21) | pendiente | Ajustado por ausencia |
 
