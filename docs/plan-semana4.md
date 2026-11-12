@@ -50,11 +50,20 @@
 
 | Integrante | Issues | PR esperados |
 | --- | --- | --- |
-| **Ivan** (`AzopG`) | #20, #23 | Quality gate + instalación limpia · video final |
+| **Ivan** (`AzopG`) | #20, #23, **#21 (asumido)** | Quality gate + instalación limpia · video final · README final |
 | **Luis** (`vannysys`) | #21 | README final y tabla de contribuciones |
 | **Andrés** (`FelipeMaldonado10`) | #22 | Workflow de release, tag y notas de `v1.0.0` |
 
 > El reparto respeta la asignación real de los issues (#20 y #23 son de Ivan, #21 de Luis, #22 de Andrés) y el historial de revisiones de las semanas 2 y 3.
+
+> **Contingencia (12 de noviembre):** Luis dejó su equipo en reparación y no lo recupera
+> hasta el sábado, así que no puede abrir su PR, revisar ni disparar el workflow esta
+> semana. **Ivan asume el contenido de #21** (README final + `scripts/contributions.py`)
+> para no bloquear el release. Los requisitos individuales de Luis (PR propio, review y
+> `workflow_dispatch` desde su cuenta) quedan pendientes hasta que recupere el equipo; no
+> se simulan desde otra cuenta ni se atribuyen a su nombre. Si no los puede cumplir, se
+> documenta la ausencia en la matriz de cierre y el README debe decir qué parte del
+> trabajo cubrió quién.
 
 ### Ivan — #20 y #23
 
@@ -95,10 +104,14 @@
 ## 3. Reviews y reglas de la semana
 
 ```
-Andrés  revisa a  Ivan     (#20, #23)
-Ivan    revisa a  Luis     (#21)
-Luis    revisa a  Andrés   (#22)
+Andrés  revisa a  Ivan     (#20, #21, #23)
+Ivan    revisa a  Luis     (#21, contenido asumido)
+Luis    revisa a  Andrés   (#22)  ← pendiente hasta que recupere el equipo
 ```
+
+Con Luis sin equipo, la review de #22 queda a cargo de Ivan y la de #21 a cargo de
+Andrés. La review de Luis se retoma el sábado si llega antes del cierre; si no llega, se
+documenta en la matriz de cierre como requisito individual pendiente.
 
 | Regla | Detalle |
 | --- | --- |
@@ -192,17 +205,22 @@ Luis    revisa a  Andrés   (#22)
 
 ## 8. Matriz de cierre — Semana 4 (`v1.0.0`)
 
-_Se completa al cerrar la semana._
+Estado al 12 de noviembre:
 
 | Integrante | GitHub | PR propio (sustancial) | Review a PR ajeno | Issue cerrado vía PR | workflow_dispatch | Estado |
 | --- | --- | --- | --- | --- | --- | --- |
-| Ivan Palacio | [AzopG](https://github.com/AzopG) | pendiente | pendiente | pendiente | pendiente | Abierto |
-| Andrés Maldonado | [FelipeMaldonado10](https://github.com/FelipeMaldonado10) | pendiente | pendiente | pendiente | pendiente | Abierto |
-| Luis Jaraba | [vannysys](https://github.com/vannysys) | pendiente | pendiente | pendiente | pendiente | Abierto |
+| Ivan Palacio | [AzopG](https://github.com/AzopG) | [#50](https://github.com/AzopG/rapidgo-variant/pull/50) mergeado · README final de #21 (`docs/readme-final`) | pendiente (#22) | [#20](https://github.com/AzopG/rapidgo-variant/issues/20) ✅ | [43112804120](https://github.com/AzopG/rapidgo-variant/actions/runs/43112804120) ✅ | En curso |
+| Andrés Maldonado | [FelipeMaldonado10](https://github.com/FelipeMaldonado10) | pendiente (#22) | [#50](https://github.com/AzopG/rapidgo-variant/pull/50) ✅ | pendiente (#22) | [43106882082](https://github.com/AzopG/rapidgo-variant/actions/runs/43106882082) ✅ | En curso |
+| Luis Jaraba | [vannysys](https://github.com/vannysys) | #21 lo asume Ivan (sin equipo hasta el sábado) | pendiente | pendiente (#21) | pendiente | Ajustado por ausencia |
+
+La fila de Luis no se completa con trabajo de otra cuenta: si no puede cumplir sus
+requisitos individuales esta semana, la matriz lo dice y el README documenta quién cubrió
+el contenido. El release `v1.0.0` no depende de esa fila, pero el cierre sí debe dejarla
+explícita.
 
 ### Checklist de release
 
-- [ ] `main` con el CI verde y sin issues abiertos sin justificar (#20)
+- [x] `main` con el CI verde y sin issues abiertos sin justificar (#20)
 - [ ] README final con resultados, limitaciones y tabla de contribuciones (#21)
 - [ ] Enlace del video en README y release (#23)
 - [ ] `workflow_dispatch` visible de los tres integrantes

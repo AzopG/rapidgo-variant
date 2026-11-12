@@ -80,18 +80,19 @@ de arriba resume el mismo flujo para quien lee sin imágenes.
 
 ```
 rapidgo-variant/
-├── .github/workflows/     # CI (y release en Semana 4)
+├── .github/workflows/     # CI, quality gate y release
 ├── airflow/dags/          # DAGs de orquestación
 ├── orchestration/         # contexto y comandos que arma el DAG (sin Airflow)
 ├── docker/airflow/        # imagen de Airflow con Java + PySpark (ADR-003)
 ├── producer/              # generador de eventos
 ├── spark/                 # jobs de Structured Streaming
-├── scripts/               # utilidades de infraestructura (topic de Kafka)
+├── scripts/               # utilidades de infraestructura (topic, spark, verificación)
 ├── tests/                 # pruebas de contrato y reglas de negocio
 ├── samples/               # eventos de ejemplo
 ├── datalake/              # estructura del data lake (raw/processed/curated)
 ├── docs/
 │   ├── arquitectura.png
+│   ├── contribuciones.md  # tabla generada desde el historial de GitHub
 │   ├── checkpoints/       # semana1.md, semana2.md, semana3.md
 │   └── decisions/         # ADR-001, ADR-002, ADR-003, ADR-004
 ├── docker-compose.yml
@@ -296,16 +297,23 @@ proyecto. La prueba de paridad de K3 sí levanta una sesión local de Spark (`lo
 para comparar el SQL de `spark/kpis_job.py` contra la tabla de `spark/kpi_rules.py`; por
 eso necesita Java 17, que el CI fija.
 
+En Windows nativo esa prueba puede fallar aunque el código esté bien: el worker de Spark
+no puede escribir sin `winutils.exe` y `HADOOP_HOME`. La validación autoritativa es el CI
+Linux, que corre la suite completa en cada push y en cada PR. Ver
+[limitaciones](#limitaciones-y-trabajo-futuro).
+
 ### CI
 
-Dos jobs en `.github/workflows/ci.yml`:
+Tres jobs en `.github/workflows/ci.yml`:
 
 | Job | Qué corre |
 | --- | --- |
 | `compileall + pytest + compose` | compilación, la suite completa, las reglas de negocio de la Semana 3 con nombre propio, la estructura del pipeline y `docker compose config` |
 | `DAG de Airflow importable y valido (#18)` | `python -m scripts.validate_dag` con `apache-airflow==2.10.4` sobre Python 3.12, más las pruebas del validador y del DAG |
+| `Quality Gate end-to-end (#20)` | `python -m scripts.verify_pipeline` completo con Docker, Kafka y Spark sobre un lake temporal; depende de los dos jobs anteriores y publica `.verify/**/resumen.txt` como artefacto obligatorio |
 
-La decisión y el costo medido están en [ADR-004](docs/decisions/ADR-004-ci-dag-validation.md).
+La decisión y el costo medido están en [ADR-004](docs/decisions/ADR-004-ci-dag-validation.md);
+el gate end-to-end se detalla en [Resultados](#resultados).
 
 ### Verificación end-to-end
 
@@ -319,7 +327,7 @@ python -m scripts.verify_pipeline
 
 ```text
 VERIFY publicados=300 inyectados_invalidos=7
-VERIFY raw=300 processed=300 rechazados=7 alertas=...
+VERIFY raw=300 processed=300 rechazados=7 alertas=12
 VERIFY resultado=OK
 ```
 
@@ -327,19 +335,86 @@ Sale con `0` si todo cumple, `1` si los conteos o el lake no cuadran, `2` si fal
 en la estructura y `3` si falla un paso (Docker, Kafka, producer o Spark), nombrando el
 paso. El resumen queda en `.verify/<id>/resumen.txt` como evidencia del checkpoint.
 
-Sin Docker (es lo que corre en CI):
+Es el mismo comando que corre el job `quality-gate` en cada push y PR. Sin Docker, para
+una revisión rápida de la estructura:
 
 ```bash
 python -m scripts.verify_pipeline --structure-only
 ```
+
+## Resultados
+
+Evidencia de la corrida final, medida en un runner limpio de GitHub Actions, no escrita
+a mano:
+
+| Indicador | Valor observado |
+| --- | --- |
+| Eventos publicados | `300` |
+| Eventos inválidos inyectados | `7` |
+| Filas en `raw` | `300` |
+| Filas en `processed` | `300` |
+| Rechazados con motivo | `7` |
+| Alertas emitidas | `12` |
+| Partición del lake | `dt=2026-11-11/hour=21` |
+| Resultado del gate | `VERIFY resultado=OK` |
+| Duración del quality gate | `1m57s` |
+
+Los tres KPIs y las alertas de esa corrida quedan en
+`datalake/runs/<run_id>/curated/report/report.json`:
+
+- **K1** calificación media por ventana de 10 minutos, global y por zona, canal y repartidor.
+- **K2** top 5 de motivos de reclamo por ventana de 15 minutos, con participación.
+- **K3** tendencia de satisfacción: últimos 60 minutos contra los 60 anteriores, con `delta` y estado.
+- **A1** caída de calificación media (`< 3.60` warning, `< 3.20` critical, `n >= 20`).
+- **A2** concentración de reclamos (`>= 30%` warning, `>= 50%` critical, `n_reclamos >= 10`).
+
+Corridas de referencia: [43106882082](https://github.com/AzopG/rapidgo-variant/actions/runs/43106882082)
+(commit `7e60354`, evidencia medida), [43112789228](https://github.com/AzopG/rapidgo-variant/actions/runs/43112789228)
+y [43112804120](https://github.com/AzopG/rapidgo-variant/actions/runs/43112804120)
+(commit `6d14d9a`, artefacto obligatorio verificado), y
+[43118386025](https://github.com/AzopG/rapidgo-variant/actions/runs/43118386025)
+(`main` después del merge del quality gate).
+
+## Limitaciones y trabajo futuro
+
+Limitaciones conocidas de la entrega:
+
+- **Spark en Windows nativo.** Sin `winutils.exe` y `HADOOP_HOME` no puede escribir Parquet
+  ni usar el conector de Kafka. Todo corre en contenedor; la suite local de Windows falla
+  en la prueba de paridad de K3 y el CI Linux es la validación autoritativa (ADR-002).
+- **Ejecución de Spark dentro de Airflow.** Los jobs corren con `--master local[*]` en el
+  contenedor de Airflow, no con `spark-submit` contra un cluster. Simplifica el entorno y
+  acota el paralelismo a un host (ADR-003).
+- **Data Lake en filesystem local.** No hay object storage ni catálogo de tablas
+  (Hive, Glue, lakehouse). Las capas `raw`/`processed`/`curated` son directorios Parquet.
+- **Fuente sintética.** El productor genera eventos con una distribución configurable; el
+  contrato de `docs/event-contract.md` está listo para conectar la app real de RapidGo.
+- **Alertas sin notificación externa.** Se persisten en `curated/alerts` con cooldown de
+  15 minutos; no hay envío a Slack, correo ni sistema de tickets.
+- **Entorno local sin seguridad.** Kafka sin autenticación y Airflow con `admin`/`admin`
+  son aceptables para la demo, no para producción.
+- **Ventanas acotadas.** A1, A2 y K3 evalúan ventanas de 10, 15 y 60 minutos; no hay
+  retención de estado de largo plazo ni detección de tendencias semanales.
+
+Trabajo futuro, en orden de impacto:
+
+1. Conectar el productor a la fuente real y reemplazar el generador sintético.
+2. Notificar las alertas a un canal operativo y cerrar el ciclo con el equipo de soporte.
+3. Mover Spark a un cluster gestionado y el lake a object storage con catálogo.
+4. Agregar tablero de KPIs sobre `curated/` y alertas con supresión por causa raíz.
+5. Endurecer el entorno: autenticación en Kafka, usuarios de Airflow y secretos fuera del repo.
+6. Pruebas de carga y de caos sobre Kafka y Spark para medir recuperación real.
 
 ## Organización del trabajo
 
 - **Tablero Kanban:** https://github.com/users/AzopG/projects/1
 - Columnas: `BACKLOG → READY → IN PROGRESS → REVIEW → DONE`
 - Campos: `Semana`, `Responsable`, `Prioridad`, `Componente`
-- **Backlog:** 23 Issues abiertos, distribuidos en las cuatro semanas.
+- **Backlog:** 23 Issues planificados a lo largo de las cuatro semanas. El tablero es la
+  fuente de verdad del estado; cada issue se cierra vía PR con `Closes #NN` en el cuerpo.
 - Flujo por cambio: `Issue → Branch → PR → GitHub Actions → Review → Merge`.
+- **`workflow_dispatch`:** el CI se puede disparar a mano desde Actions, y cada integrante
+  deja al menos una corrida visible desde su propia cuenta.
 
 ## Roadmap de releases
 
@@ -352,13 +427,24 @@ python -m scripts.verify_pipeline --structure-only
 
 ## Equipo y contribuciones
 
-La tabla de contribuciones (responsabilidades, Issues y PR principales por integrante)
-se completa en la Semana 4, a partir del historial real del repositorio.
+| Integrante | Rol en la entrega | Issues | PRs mergeados | Reviews a PR ajenos | `workflow_dispatch` |
+| --- | --- | --- | --- | --- | --- |
+| Ivan Palacio (`AzopG`) | Arquitectura, Kafka, productor, DAG de Airflow, quality gate, coordinación | [10](https://github.com/AzopG/rapidgo-variant/issues?q=is%3Aissue+assignee%3AAzopG) | [16](https://github.com/AzopG/rapidgo-variant/pulls?q=is%3Apr+author%3AAzopG+is%3Amerged) | [6](https://github.com/AzopG/rapidgo-variant/pulls?q=is%3Apr+reviewed-by%3AAzopG) | [3](https://github.com/AzopG/rapidgo-variant/actions/workflows/ci.yml?query=event%3Aworkflow_dispatch) |
+| Andrés Maldonado (`FelipeMaldonado10`) | Spark, alertas, validación del DAG en CI, release `v1.0.0` | [8](https://github.com/AzopG/rapidgo-variant/issues?q=is%3Aissue+assignee%3AFelipeMaldonado10) | [4](https://github.com/AzopG/rapidgo-variant/pulls?q=is%3Apr+author%3AFelipeMaldonado10+is%3Amerged) | [14](https://github.com/AzopG/rapidgo-variant/pulls?q=is%3Apr+reviewed-by%3AFelipeMaldonado10) | [3](https://github.com/AzopG/rapidgo-variant/actions/workflows/ci.yml?query=event%3Aworkflow_dispatch) |
+| Luis Jaraba (`vannysys`) | Verificación end-to-end, CI, calidad de `raw`/`curated` y reporte | [5](https://github.com/AzopG/rapidgo-variant/issues?q=is%3Aissue+assignee%3Avannysys) | [4](https://github.com/AzopG/rapidgo-variant/pulls?q=is%3Apr+author%3Avannysys+is%3Amerged) | [2](https://github.com/AzopG/rapidgo-variant/pulls?q=is%3Apr+reviewed-by%3Avannysys) | [2](https://github.com/AzopG/rapidgo-variant/actions/workflows/ci.yml?query=event%3Aworkflow_dispatch) |
+
+La tabla completa —issue por issue y PR por PR, generada desde el historial real de
+GitHub— está en [`docs/contribuciones.md`](docs/contribuciones.md). Se regenera con:
+
+```bash
+python -m scripts.contributions --repo AzopG/rapidgo-variant
+```
 
 ## Enlaces
 
-- Video final: _pendiente_
+- Video final: _pendiente de publicación (#23)_
 - Release actual: [`v0.3.0-orchestration`](https://github.com/AzopG/rapidgo-variant/releases/tag/v0.3.0-orchestration)
 - Tablero Kanban: https://github.com/users/AzopG/projects/1
+- Contribuciones: [`docs/contribuciones.md`](docs/contribuciones.md)
 - Contrato del evento: [`docs/event-contract.md`](docs/event-contract.md)
 - KPIs y alertas: [`docs/kpis-alerts.md`](docs/kpis-alerts.md)
