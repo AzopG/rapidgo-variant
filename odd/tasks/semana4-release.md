@@ -44,9 +44,9 @@ Alcance autorizado: `.github/workflows/release.yml`, `docs/releases/v1.0.0.md`, 
 | T2 | `.github/workflows/release.yml`: `workflow_dispatch` con `version` y `dry_run`, valida `main` verde en el SHA, tag anotado y release con las notas | S1, S5, S7 | inline | hecho (`1d656b6`), corregido por review |
 | T3 | `tests/test_release_workflow.py`: contrato del workflow y de las notas | S1, S5, S6 | inline | hecho (`1d656b6`), 12 tests |
 | T4 | Verificación local del workflow: `bash -n`, `dry_run` real y negativos (versión inválida, notas faltantes, tag existente, SHA ajeno) | S5 | inline | hecho (10/10) + paso 4 real con el `GITHUB_TOKEN` en Actions |
-| T5 | PR con `Closes #22`, review de un compañero y merge | S8, S9 | delegado (review) | PR #52, `CHANGES_REQUESTED` de Ivan, corregido |
-| T6 | `workflow_dispatch` real del release y evidencia en #22 (URL del release y de las tres corridas manuales) | S1, S3, S4, S10 | inline | pendiente del merge de #52 |
-| T7 | README: `v1.0.0` publicado y release actual; checklist de release del plan — commit inmediato después de publicar, como pidió Ivan en su review | S2 | inline | pendiente, depende de T6 |
+| T5 | PR con `Closes #22`, review de un compañero y merge | S8, S9 | delegado (review) | hecho: PR #52 aprobado por Ivan y mergeado por él como `f31e743` (9/9 PRs del proyecto sin auto-merge) |
+| T6 | `workflow_dispatch` real del release y evidencia en #22 (URL del release y de las tres corridas manuales) | S1, S3, S4, S10 | inline | hecho: `dry_run` `43343282021`, release real `43343344957`, tag y release verificados |
+| T7 | README: `v1.0.0` publicado y release actual; checklist de release del plan — commit inmediato después de publicar, como pidió Ivan en su review | S2 | inline | hecho en PR #53 (`296b509`) |
 
 Risk: item 5 (release) — el workflow crea un tag público y publica un release; un error queda visible y es costoso de revertir.
 
@@ -61,3 +61,11 @@ Risk: item 5 (release) — el workflow crea un tag público y publica un release
   - Menor 1 aceptado: se cita `43338275082` de Andrés sobre `main` en `5b8733a` (más nueva que la `42132179429` que Ivan propuso).
   - Menor 2 aceptado: la actualización del README queda como T7, commit inmediato después de publicar el release.
   - Lección: probé los bloques con mi token de usuario, que tiene todos mis permisos, y por eso no vi la diferencia con el `GITHUB_TOKEN`. El hueco de verificación se cerró ejecutando el paso real dentro de Actions.
+- L5. Publicación (2026-11-13, 01:10–01:15 UTC):
+  - PR #52 aprobado por Ivan y mergeado por él como `f31e743`. Ivan autorizó que lo mergeara yo; no lo hice: la regla del plan (`:118`) es "nadie mergea su propio PR" y el repo la cumple 9 de 9 (#44–#52), así que se lo pedí a él.
+  - CI del merge en verde (`43342841085`), requisito del workflow antes de taggear.
+  - `dry_run=true` real: run `43343282021`, salida `main verde en f31e743…` y ningún tag creado (verificado contra `git/refs/tags`).
+  - Release real: run `43343344957`, `completed/success`. Tag `v1.0.0` es un objeto `tag` (anotado), tagger `github-actions[bot]`, apunta a `f31e743` = `main`.
+  - Cuerpo del release byte por byte igual a `docs/releases/v1.0.0.md` (6082 bytes), con los acentos y el em dash intactos. Se verificó comparando el blob de git contra el JSON de la API, no contra la consola: PowerShell decodifica el stdout de `gh` con la codificación de consola y mostraba `???` donde había multibyte. Falso positivo evitado.
+  - #22 se cerró solo con el merge (`CLOSED`/`COMPLETED`, 01:10:16 UTC).
+  - T7 en PR #53.

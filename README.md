@@ -423,7 +423,7 @@ Trabajo futuro, en orden de impacto:
 | `v0.1.0-foundation` | 1 | Arquitectura, contrato de evento, KPIs, alertas, Kanban, ADR-001 | [publicado](https://github.com/AzopG/rapidgo-variant/releases/tag/v0.1.0-foundation) |
 | `v0.2.0-streaming` | 2 | Kafka + Spark Streaming + Data Lake + pruebas + CI | [publicado](https://github.com/AzopG/rapidgo-variant/releases/tag/v0.2.0-streaming) |
 | `v0.3.0-orchestration` | 3 | DAG de Airflow, calidad, recuperación ante fallos, CI ampliado | [publicado](https://github.com/AzopG/rapidgo-variant/releases/tag/v0.3.0-orchestration) |
-| `v1.0.0` | 4 | Quality gate, README final, release y video | pendiente |
+| `v1.0.0` | 4 | Quality gate, README final, release y video | [publicado](https://github.com/AzopG/rapidgo-variant/releases/tag/v1.0.0) |
 
 ## Equipo y contribuciones
 
@@ -443,7 +443,7 @@ python -m scripts.contributions --repo AzopG/rapidgo-variant
 ## Enlaces
 
 - Video final: _pendiente de publicación (#23)_
-- Release actual: [`v0.3.0-orchestration`](https://github.com/AzopG/rapidgo-variant/releases/tag/v0.3.0-orchestration)
+- Release actual: [`v1.0.0`](https://github.com/AzopG/rapidgo-variant/releases/tag/v1.0.0)
 - Tablero Kanban: https://github.com/users/AzopG/projects/1
 - Contribuciones: [`docs/contribuciones.md`](docs/contribuciones.md)
 - Contrato del evento: [`docs/event-contract.md`](docs/event-contract.md)

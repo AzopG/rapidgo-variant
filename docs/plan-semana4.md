@@ -221,8 +221,8 @@ explícita.
 ### Checklist de release
 
 - [x] `main` con el CI verde y sin issues abiertos sin justificar (#20)
-- [ ] README final con resultados, limitaciones y tabla de contribuciones (#21)
+- [x] README final con resultados, limitaciones y tabla de contribuciones (#21)
 - [ ] Enlace del video en README y release (#23)
-- [ ] `workflow_dispatch` visible de los tres integrantes
-- [ ] Tag `v1.0.0` anotado sobre `main`
-- [ ] Release notes con enlaces a `v0.1.0-foundation`, `v0.2.0-streaming` y `v0.3.0-orchestration`
+- [x] `workflow_dispatch` visible de los tres integrantes
+- [x] Tag `v1.0.0` anotado sobre `main`
+- [x] Release notes con enlaces a `v0.1.0-foundation`, `v0.2.0-streaming` y `v0.3.0-orchestration`
