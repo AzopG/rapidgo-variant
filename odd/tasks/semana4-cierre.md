@@ -77,8 +77,8 @@ Texto del issue, literal:
 | --- | --- | --- | --- | --- |
 | T1 | `docs/plan-semana4.md` con reparto, dependencias y decisiones | S26 | inline | ✅ |
 | T2 | Kanban: items S3 a DONE y S4 a READY con semana y responsable | S2 | inline | ✅ |
-| T3 | #20 (Ivan): job end-to-end del CI + `scripts/bootstrap_check.py` | S1–S6 | inline | ⏳ CI implementado; falta evidencia Linux |
-| T4 | #21 (Luis): `scripts/contributions.py` + README final | S7–S13 | inline | ⏳ |
+| T3 | #20 (Ivan): job end-to-end del CI + `scripts/bootstrap_check.py` | S1–S6 | inline | ✅ PR #50 mergeado (`546ae32`); evidencia Linux registrada |
+| T4 | #21 (asumido por Ivan): `scripts/contributions.py` + README final | S7–S13 | inline | ⏳ implementado en `docs/readme-final`; falta PR y review |
 | T5 | #22 (Andrés): `.github/workflows/release.yml` + `docs/releases/v1.0.0.md` | S14–S20 | inline | ⏳ |
 | T6 | #23 (Ivan): video de 10 min con los tres integrantes | S21–S25 | inline | ⏳ |
 | T7 | Cierre: matriz, `workflow_dispatch` de los tres y verificación de issues | S26–S27 | inline | ⏳ |
@@ -93,3 +93,6 @@ Texto del issue, literal:
 - L6. #20: `.github/workflows/ci.yml` agrega `quality-gate`, dependiente de `validar` y `dag`, que ejecuta `python -m scripts.verify_pipeline` completo. La instalación limpia del runner y la corrida end-to-end cubren el equivalente operativo de la prueba de bootstrap; el resumen se publica como artefacto obligatorio con `include-hidden-files: true` e `if-no-files-found: error`.
 - L7. Verificación local: `pytest -q tests/test_verify_pipeline.py` → 48 passed; `docker compose config --quiet` → exit 0; `pytest -q` → 272 passed, 9 failed en `tests/test_kpi_trend_parity.py` por una limitación del entorno Spark/PySpark local de Windows; `python -m scripts.verify_pipeline` no pudo ejecutarse porque Docker Desktop no estaba disponible.
 - L8. Verificación Linux del mismo commit `7e60354` mediante Actions (`43106882082`): `validar` success, `dag` success y `Quality Gate end-to-end` success en 1m57s; `VERIFY publicados=300 inyectados_invalidos=7`, `raw=300 processed=300 rechazados=7 alertas=12`, partición `dt=2026-11-11/hour=21` y `VERIFY resultado=OK`. La evidencia se midió en un runner limpio, no se infiere.
+- L9. PR #50 aprobado por `FelipeMaldonado10` y mergeado en `main` como `546ae325`; CI posterior `43118386025` success. T3 cerrado.
+- L10. Pedido del usuario, literal: "surgio una situacion problema, luis llevo a reparar el pc de el ... no se lo devuleven hasta el sabado ... vamos a tener que realizarla por el, andres si puede hacer su parte normal entonces asigname los trabajos de luis y realizalos". Ivan asume el contenido de #21. Los requisitos individuales de Luis (PR, review, `workflow_dispatch`) no se simulan desde otra cuenta: quedan pendientes y se documentan en la matriz.
+- L11. #21 implementado en `docs/readme-final`: `scripts/contributions.py` (tabla determinista desde `gh`) + `tests/test_contributions.py` (14 pruebas), `docs/contribuciones.md` generado, README con `Resultados`, `Limitaciones y trabajo futuro`, `Equipo y contribuciones` y corrección de "23 Issues abiertos" (S13). El enlace del video queda como pendiente de #23 y se agrega en un commit posterior, como permite el plan.
