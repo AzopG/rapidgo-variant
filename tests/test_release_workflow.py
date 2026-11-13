@@ -48,7 +48,13 @@ def test_input_de_version_y_dry_run() -> None:
 
 
 def test_permisos_para_crear_tag_y_release() -> None:
-    assert load_workflow()["permissions"]["contents"] == "write"
+    permissions = load_workflow()["permissions"]
+
+    assert permissions["contents"] == "write"
+    # El paso de validacion consulta las corridas del CI por la API: ese es el
+    # permiso documentado para Actions. Con el repo publico pasaria igual sin el,
+    # pero no se depende de una regla implicita.
+    assert permissions["actions"] == "read"
 
 
 def test_el_release_corre_sobre_main_con_timeout() -> None:

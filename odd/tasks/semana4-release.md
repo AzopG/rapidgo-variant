@@ -40,13 +40,13 @@ Alcance autorizado: `.github/workflows/release.yml`, `docs/releases/v1.0.0.md`, 
 
 | ID | Tarea | Specs | Ruta | Estado |
 | --- | --- | --- | --- | --- |
-| T1 | `docs/releases/v1.0.0.md`: alcance, KPIs, alertas, enlaces a los tres releases previos y verificación | S2, S6, S7 | inline | pendiente |
-| T2 | `.github/workflows/release.yml`: `workflow_dispatch` con `version` y `dry_run`, valida `main` verde en el SHA, tag anotado y release con las notas | S1, S5, S7 | inline | pendiente |
-| T3 | `tests/test_release_workflow.py`: contrato del workflow y de las notas | S1, S5, S6 | inline | pendiente |
-| T4 | Verificación local del workflow: `bash -n`, `dry_run` real y tres negativos (versión inválida, notas faltantes, tag existente) | S5 | inline | pendiente |
-| T5 | PR con `Closes #22`, review de un compañero y merge | S8, S9 | delegado (review) | pendiente |
-| T6 | `workflow_dispatch` real del release y evidencia en #22 (URL del release y de las tres corridas manuales) | S1, S3, S4, S10 | inline | pendiente |
-| T7 | README: `v1.0.0` publicado y release actual; checklist de release del plan | S2 | inline | pendiente |
+| T1 | `docs/releases/v1.0.0.md`: alcance, KPIs, alertas, enlaces a los tres releases previos y verificación | S2, S6, S7 | inline | hecho (`1d656b6`), corregido por review |
+| T2 | `.github/workflows/release.yml`: `workflow_dispatch` con `version` y `dry_run`, valida `main` verde en el SHA, tag anotado y release con las notas | S1, S5, S7 | inline | hecho (`1d656b6`), corregido por review |
+| T3 | `tests/test_release_workflow.py`: contrato del workflow y de las notas | S1, S5, S6 | inline | hecho (`1d656b6`), 12 tests |
+| T4 | Verificación local del workflow: `bash -n`, `dry_run` real y negativos (versión inválida, notas faltantes, tag existente, SHA ajeno) | S5 | inline | hecho (10/10) + paso 4 real con el `GITHUB_TOKEN` en Actions |
+| T5 | PR con `Closes #22`, review de un compañero y merge | S8, S9 | delegado (review) | PR #52, `CHANGES_REQUESTED` de Ivan, corregido |
+| T6 | `workflow_dispatch` real del release y evidencia en #22 (URL del release y de las tres corridas manuales) | S1, S3, S4, S10 | inline | pendiente del merge de #52 |
+| T7 | README: `v1.0.0` publicado y release actual; checklist de release del plan — commit inmediato después de publicar, como pidió Ivan en su review | S2 | inline | pendiente, depende de T6 |
 
 Risk: item 5 (release) — el workflow crea un tag público y publica un release; un error queda visible y es costoso de revertir.
 
@@ -55,3 +55,9 @@ Risk: item 5 (release) — el workflow crea un tag público y publica un release
 - L1. Pedido del usuario, literal: "En el repo debo tener trabajo asignado hagamoslo por favor".
 - L2. Estado al arrancar: `main` en `5b8733a`, PR #51 (README de #21) mergeado y #21 cerrado. Único issue abierto asignado a Andrés: #22. Ivan tiene #23 (video) abierto.
 - L3. Se verificó que la evidencia de `workflow_dispatch` de los tres integrantes ya existe y es visible en Actions: Ivan `43333325295` y Luis `43335110563`, ambos sobre `main` y en verde; Andrés `43106882082` sobre la rama del quality gate y `42132179429` sobre `main`.
+- L4. Review de Ivan en #52 (`CHANGES_REQUESTED`, 00:35 UTC): pidió `actions: read` en `permissions` porque, según la documentación, al declarar `permissions` lo no nombrado queda en `none` y el endpoint de corridas del CI devolvería 403; más dos menores (la tabla de notas decía "sobre `main`" pero `43106882082` corrió sobre la rama del quality gate; el README queda desactualizado al publicar).
+  - Verificado: la regla de `permissions` es cierta (documentación de workflow syntax), pero el bloqueador **no reproduce**. Prueba con el token real: una corrida de `ci.yml` en una rama descartable ejecutó el paso "Validar que main este verde en este commit" extraído del `release.yml` del PR, con solo `contents: read` declarado, y salió `main verde en 5b8733aa…` con exit 0 (run `43340022586`, job del probe `completed/success`). Causa: el endpoint `/actions/workflows/{id}/runs` solo exige lectura del repositorio, y el repo es público.
+  - Igual se agregó `actions: read`: es el permiso documentado para Actions y evita depender de la regla implícita del repo público. Costo cero, y el test lo fija.
+  - Menor 1 aceptado: se cita `43338275082` de Andrés sobre `main` en `5b8733a` (más nueva que la `42132179429` que Ivan propuso).
+  - Menor 2 aceptado: la actualización del README queda como T7, commit inmediato después de publicar el release.
+  - Lección: probé los bloques con mi token de usuario, que tiene todos mis permisos, y por eso no vi la diferencia con el `GITHUB_TOKEN`. El hueco de verificación se cerró ejecutando el paso real dentro de Actions.
