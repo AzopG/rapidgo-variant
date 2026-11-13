@@ -13,6 +13,13 @@ Ingeniería de Sistemas y Computación · Facatativá · 2026
 | Ivan Palacio | [AzopG](https://github.com/AzopG) |
 | Luis Jaraba | [vannysys](https://github.com/vannysys) |
 
+## Video de la demo
+
+[![Video de la demo de RapidGo 360](https://img.youtube.com/vi/eJebgEh0Bro/hqdefault.jpg)](https://youtu.be/eJebgEh0Bro)
+
+La demostración completa del pipeline, con la grabación de pantalla y la voz en off de los
+tres integrantes, está publicada en YouTube: <https://youtu.be/eJebgEh0Bro>.
+
 ## Problema de negocio
 
 RapidGo no tiene forma de saber, en el momento en que ocurre, que la experiencia del
@@ -429,9 +436,9 @@ Trabajo futuro, en orden de impacto:
 
 | Integrante | Rol en la entrega | Issues | PRs mergeados | Reviews a PR ajenos | `workflow_dispatch` |
 | --- | --- | --- | --- | --- | --- |
-| Ivan Palacio (`AzopG`) | Arquitectura, Kafka, productor, DAG de Airflow, quality gate, coordinación | [10](https://github.com/AzopG/rapidgo-variant/issues?q=is%3Aissue+assignee%3AAzopG) | [16](https://github.com/AzopG/rapidgo-variant/pulls?q=is%3Apr+author%3AAzopG+is%3Amerged) | [6](https://github.com/AzopG/rapidgo-variant/pulls?q=is%3Apr+reviewed-by%3AAzopG) | [3](https://github.com/AzopG/rapidgo-variant/actions/workflows/ci.yml?query=event%3Aworkflow_dispatch) |
-| Andrés Maldonado (`FelipeMaldonado10`) | Spark, alertas, validación del DAG en CI, release `v1.0.0` | [8](https://github.com/AzopG/rapidgo-variant/issues?q=is%3Aissue+assignee%3AFelipeMaldonado10) | [4](https://github.com/AzopG/rapidgo-variant/pulls?q=is%3Apr+author%3AFelipeMaldonado10+is%3Amerged) | [14](https://github.com/AzopG/rapidgo-variant/pulls?q=is%3Apr+reviewed-by%3AFelipeMaldonado10) | [3](https://github.com/AzopG/rapidgo-variant/actions/workflows/ci.yml?query=event%3Aworkflow_dispatch) |
-| Luis Jaraba (`vannysys`) | Verificación end-to-end, CI, calidad de `raw`/`curated` y reporte | [5](https://github.com/AzopG/rapidgo-variant/issues?q=is%3Aissue+assignee%3Avannysys) | [4](https://github.com/AzopG/rapidgo-variant/pulls?q=is%3Apr+author%3Avannysys+is%3Amerged) | [2](https://github.com/AzopG/rapidgo-variant/pulls?q=is%3Apr+reviewed-by%3Avannysys) | [2](https://github.com/AzopG/rapidgo-variant/actions/workflows/ci.yml?query=event%3Aworkflow_dispatch) |
+| Ivan Palacio (`AzopG`) | Arquitectura, Kafka, productor, DAG de Airflow, quality gate, coordinación | [10](https://github.com/AzopG/rapidgo-variant/issues?q=is%3Aissue+assignee%3AAzopG) | [19](https://github.com/AzopG/rapidgo-variant/pulls?q=is%3Apr+author%3AAzopG+is%3Amerged) | [8](https://github.com/AzopG/rapidgo-variant/pulls?q=is%3Apr+reviewed-by%3AAzopG) | [4](https://github.com/AzopG/rapidgo-variant/actions/workflows/ci.yml?query=event%3Aworkflow_dispatch) |
+| Andrés Maldonado (`FelipeMaldonado10`) | Spark, alertas, validación del DAG en CI, release `v1.0.0` | [8](https://github.com/AzopG/rapidgo-variant/issues?q=is%3Aissue+assignee%3AFelipeMaldonado10) | [6](https://github.com/AzopG/rapidgo-variant/pulls?q=is%3Apr+author%3AFelipeMaldonado10+is%3Amerged) | [14](https://github.com/AzopG/rapidgo-variant/pulls?q=is%3Apr+reviewed-by%3AFelipeMaldonado10) | [8](https://github.com/AzopG/rapidgo-variant/actions/workflows/ci.yml?query=event%3Aworkflow_dispatch) |
+| Luis Jaraba (`vannysys`) | Verificación end-to-end, CI, calidad de `raw`/`curated` y reporte | [5](https://github.com/AzopG/rapidgo-variant/issues?q=is%3Aissue+assignee%3Avannysys) | [4](https://github.com/AzopG/rapidgo-variant/pulls?q=is%3Apr+author%3Avannysys+is%3Amerged) | [3](https://github.com/AzopG/rapidgo-variant/pulls?q=is%3Apr+reviewed-by%3Avannysys) | [3](https://github.com/AzopG/rapidgo-variant/actions/workflows/ci.yml?query=event%3Aworkflow_dispatch) |
 
 La tabla completa —issue por issue y PR por PR, generada desde el historial real de
 GitHub— está en [`docs/contribuciones.md`](docs/contribuciones.md). Se regenera con:
@@ -442,7 +449,7 @@ python -m scripts.contributions --repo AzopG/rapidgo-variant
 
 ## Enlaces
 
-- Video final: _pendiente de publicación (#23)_
+- Video final: [RapidGo 360 — demo completa](https://youtu.be/eJebgEh0Bro) (#23)
 - Release actual: [`v1.0.0`](https://github.com/AzopG/rapidgo-variant/releases/tag/v1.0.0)
 - Tablero Kanban: https://github.com/users/AzopG/projects/1
 - Contribuciones: [`docs/contribuciones.md`](docs/contribuciones.md)

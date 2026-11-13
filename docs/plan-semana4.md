@@ -222,7 +222,7 @@ explícita.
 
 - [x] `main` con el CI verde y sin issues abiertos sin justificar (#20)
 - [x] README final con resultados, limitaciones y tabla de contribuciones (#21)
-- [ ] Enlace del video en README y release (#23)
+- [x] Enlace del video en README y release (#23)
 - [x] `workflow_dispatch` visible de los tres integrantes
 - [x] Tag `v1.0.0` anotado sobre `main`
 - [x] Release notes con enlaces a `v0.1.0-foundation`, `v0.2.0-streaming` y `v0.3.0-orchestration`
