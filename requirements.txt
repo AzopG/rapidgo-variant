@@ -7,3 +7,5 @@ pytest==8.3.3
 python-dotenv==1.0.1
 # Semana 3 (#16): quality/ lee el Parquet del lake sin Spark.
 pyarrow==21.0.0
+# Semana 4 (#22): el test del workflow de release lee el YAML de .github/workflows.
+pyyaml==6.0.2
